@@ -1,3 +1,5 @@
+import { config } from "./config.js";
+
 export type Orb = {
   id: number;
   x: number;
@@ -35,8 +37,8 @@ export function createWorld(): World {
         dirY: 0,
         targetDirX: 0,
         targetDirY: 1,
-        speed: 120,
-        length: 16,
+        speed: config.simulation.playerDefaultSpeed,
+        length: config.simulation.playerDefaultLength,
       },
     ],
   };

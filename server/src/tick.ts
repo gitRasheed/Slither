@@ -1,8 +1,8 @@
+import { config } from "./config.js";
 import { updateWorld } from "./systems.js";
 import { createWorld } from "./world.js";
 
-const tickRate = 60;
-const tickIntervalMs = 1000 / tickRate;
+const tickIntervalMs = 1000 / config.simulation.tickRate;
 
 export function startTickLoop(): NodeJS.Timeout {
   const world = createWorld();

@@ -1,11 +1,14 @@
+import { config } from "./config.js";
 import type { World } from "./world.js";
 
-const orbSpawnInterval = 30;
-const tickRate = 60;
+const {
+  tickRate,
+  orbSpawnInterval,
+  baseTurnRate,
+  turnRateLengthFactor,
+  targetFlipInterval,
+} = config.simulation;
 const tickDeltaSeconds = 1 / tickRate;
-const baseTurnRate = 2.0;
-const turnRateLengthFactor = 0.03;
-const targetFlipInterval = 180;
 
 export function updateWorld(world: World): void {
   if (world.tick % orbSpawnInterval === 0) {
