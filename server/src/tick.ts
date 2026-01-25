@@ -1,8 +1,39 @@
 import { config } from "./config.js";
+import { broadcastSnapshot, type WorldSnapshot } from "./network.js";
 import { updateWorld } from "./systems.js";
 import { createWorld } from "./world.js";
 
 const tickIntervalMs = 1000 / config.simulation.tickRate;
+const snapshotEveryNTicks = 1;
+
+const createSnapshot = (world: ReturnType<typeof createWorld>): WorldSnapshot => {
+  const players = world.players.map((player) => ({
+    id: player.id,
+    x: player.x,
+    y: player.y,
+    dirX: player.dirX,
+    dirY: player.dirY,
+    length: player.length,
+  }));
+
+  const orbs = world.orbs.map((orb) => ({
+    id: orb.id,
+    x: orb.x,
+    y: orb.y,
+  }));
+
+  Object.freeze(players);
+  Object.freeze(orbs);
+
+  const snapshot = {
+    tick: world.tick,
+    players,
+    orbs,
+  };
+
+  Object.freeze(snapshot);
+  return snapshot;
+};
 
 export function startTickLoop(): NodeJS.Timeout {
   const world = createWorld();
@@ -35,6 +66,9 @@ export function startTickLoop(): NodeJS.Timeout {
   return setInterval(() => {
     world.tick += 1;
     updateWorld(world);
+    if (world.tick % snapshotEveryNTicks === 0) {
+      broadcastSnapshot(createSnapshot(world));
+    }
     onTick();
   }, tickIntervalMs);
 }
