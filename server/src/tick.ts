@@ -15,8 +15,13 @@ export function startTickLoop(): NodeJS.Timeout {
 
     if (uptimeWholeSeconds !== lastLogSecond) {
       lastLogSecond = uptimeWholeSeconds;
+      const firstPlayer = world.players[0];
+      const playerPosition = firstPlayer
+        ? `p0=(${firstPlayer.x.toFixed(1)}, ${firstPlayer.y.toFixed(1)})`
+        : "p0=(n/a, n/a)";
+
       console.log(
-        `[tick] tick=${world.tick} uptime=${uptimeSeconds.toFixed(1)}s orbs=${world.orbs.length}`
+        `[tick] tick=${world.tick} uptime=${uptimeSeconds.toFixed(1)}s orbs=${world.orbs.length} players=${world.players.length} ${playerPosition}`
       );
     }
   };
