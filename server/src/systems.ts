@@ -3,15 +3,14 @@ import type { World } from "./world.js";
 
 const {
   tickRate,
-  orbSpawnInterval,
+  orbSpawnIntervalTicks,
   baseTurnRate,
-  turnRateLengthFactor,
-  targetFlipInterval,
+  lengthTurnPenalty,
 } = config.simulation;
 const tickDeltaSeconds = 1 / tickRate;
 
 export function updateWorld(world: World): void {
-  if (world.tick % orbSpawnInterval === 0) {
+  if (world.tick % orbSpawnIntervalTicks === 0) {
     world.orbs.push({
       id: world.orbs.length,
       x: 0,
@@ -25,13 +24,6 @@ export function updateWorld(world: World): void {
   }
 
   for (const player of world.players) {
-    if (world.tick % targetFlipInterval === 0) {
-      const nextTargetX = -player.targetDirX;
-      const nextTargetY = -player.targetDirY;
-      player.targetDirX = nextTargetX;
-      player.targetDirY = nextTargetY;
-    }
-
     const currentAngle = Math.atan2(player.dirY, player.dirX);
     const targetAngle = Math.atan2(player.targetDirY, player.targetDirX);
     let delta = targetAngle - currentAngle;
@@ -42,7 +34,7 @@ export function updateWorld(world: World): void {
       delta += Math.PI * 2;
     }
 
-    const turnRate = baseTurnRate / (1 + player.length * turnRateLengthFactor);
+    const turnRate = baseTurnRate / (1 + player.length * lengthTurnPenalty);
     const maxTurn = turnRate * tickDeltaSeconds;
     const clampedDelta = Math.max(-maxTurn, Math.min(maxTurn, delta));
     const newAngle = currentAngle + clampedDelta;

@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Slither Client</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      html,
+      body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0b0d12;
+        color: #e5e7eb;
+      }
+      canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 20% 20%, #1a2233 0%, #0b0d12 55%, #080a0f 100%);
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Slither client canvas"></canvas>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

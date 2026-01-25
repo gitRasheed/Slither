@@ -44,16 +44,29 @@ const createSnapshot = (world: ReturnType<typeof createWorld>): WorldSnapshot =>
 const applyIntents = (world: ReturnType<typeof createWorld>) => {
   for (const socket of getClientSockets()) {
     const intent = consumeLatestIntent(socket);
+    // DEBUG: Log if we are checking a socket, and if it has an intent
+    // console.log(`[tick] Checking socket. Intent available: ${!!intent}`);
+
     if (!intent) {
       continue;
     }
 
-    const playerIndex = getClientPlayerIndex(socket);
-    if (playerIndex === undefined) {
+    const clientIndex = getClientPlayerIndex(socket);
+    // DEBUG: Log the resolved indices
+    console.log(
+      `[tick] Processing Intent. ClientIndex: ${clientIndex} | World Players: ${world.players.length}`
+    );
+
+    if (clientIndex === undefined) {
+      console.log(`[tick] ERROR: ClientIndex undefined`);
       continue;
     }
 
+    const playerIndex = clientIndex % world.players.length;
     const player = world.players[playerIndex];
+
+    console.log(`[tick] Mapped Client ${clientIndex} -> Player ${playerIndex}. Found: ${!!player}`);
+
     if (!player) {
       continue;
     }
@@ -67,6 +80,9 @@ const applyIntents = (world: ReturnType<typeof createWorld>) => {
     if (length === 0) {
       continue;
     }
+
+    // DEBUG: Log the final application
+    console.log(`[tick] APPLYING: Player ${playerIndex} target set to (${dirX}, ${dirY})`);
 
     player.targetDirX = dirX / length;
     player.targetDirY = dirY / length;

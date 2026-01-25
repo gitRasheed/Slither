@@ -1,5 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
 
+const VERBOSE = process.env.VERBOSE === "true" || process.argv.includes("--verbose");
+
 export type WorldSnapshot = {
   tick: number;
   players: {
@@ -38,47 +40,71 @@ export function startWebSocketServer(opts?: { port: number }): WebSocketServer {
   server.on("connection", (socket) => {
     clients.add(socket);
     clientPlayerIndex.set(socket, nextPlayerIndex);
+    const myId = nextPlayerIndex;
     nextPlayerIndex += 1;
 
+    console.log(`[network] New Connection. ID: ${myId}. Total Clients: ${clients.size}`);
+
     socket.on("message", (data) => {
-      if (typeof data !== "string") {
-        return;
+      const messageString = typeof data === "string" ? data : data.toString("utf-8");
+
+      if (VERBOSE) {
+        console.log(`[network] Raw message from ${myId}:`, messageString);
       }
 
       let message: unknown;
       try {
-        message = JSON.parse(data);
-      } catch {
+        message = JSON.parse(messageString);
+      } catch (e) {
+        if (VERBOSE) {
+          console.log(`[network] JSON Parse Error from ${myId}:`, e);
+        }
         return;
       }
 
       if (typeof message !== "object" || message === null) {
+        if (VERBOSE) {
+          console.log(`[network] Invalid message format from ${myId}`);
+        }
         return;
       }
 
       const intent = message as ClientIntent;
       if (intent.type !== "set_direction") {
+        // console.log(`[network] Unknown intent type: ${intent.type}`);
         return;
       }
 
       if (typeof intent.payload !== "object" || intent.payload === null) {
+        if (VERBOSE) {
+          console.log(`[network] Missing payload from ${myId}`);
+        }
         return;
       }
 
-      if (typeof intent.payload.dirX !== "number" || typeof intent.payload.dirY !== "number") {
+      const { dirX, dirY } = intent.payload;
+      if (typeof dirX !== "number" || typeof dirY !== "number") {
+        if (VERBOSE) {
+          console.log(`[network] Invalid direction numbers from ${myId}:`, dirX, dirY);
+        }
         return;
       }
 
+      if (VERBOSE) {
+        console.log(`[network] Intent ACCEPTED from ${myId}: ${dirX}, ${dirY}`);
+      }
       latestIntents.set(socket, intent);
     });
 
     socket.on("close", () => {
+      console.log(`[network] Connection Closed. ID: ${myId}`);
       clients.delete(socket);
       latestIntents.delete(socket);
       clientPlayerIndex.delete(socket);
     });
 
-    socket.on("error", () => {
+    socket.on("error", (err) => {
+      console.log(`[network] Connection Error ${myId}:`, err);
       clients.delete(socket);
       latestIntents.delete(socket);
       clientPlayerIndex.delete(socket);
