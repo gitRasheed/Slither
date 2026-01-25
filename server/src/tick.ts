@@ -1,5 +1,11 @@
 import { config } from "./config.js";
-import { broadcastSnapshot, type WorldSnapshot } from "./network.js";
+import {
+  broadcastSnapshot,
+  consumeLatestIntent,
+  getClientPlayerIndex,
+  getClientSockets,
+  type WorldSnapshot,
+} from "./network.js";
 import { updateWorld } from "./systems.js";
 import { createWorld } from "./world.js";
 
@@ -35,6 +41,38 @@ const createSnapshot = (world: ReturnType<typeof createWorld>): WorldSnapshot =>
   return snapshot;
 };
 
+const applyIntents = (world: ReturnType<typeof createWorld>) => {
+  for (const socket of getClientSockets()) {
+    const intent = consumeLatestIntent(socket);
+    if (!intent) {
+      continue;
+    }
+
+    const playerIndex = getClientPlayerIndex(socket);
+    if (playerIndex === undefined) {
+      continue;
+    }
+
+    const player = world.players[playerIndex];
+    if (!player) {
+      continue;
+    }
+
+    const { dirX, dirY } = intent.payload;
+    if (!Number.isFinite(dirX) || !Number.isFinite(dirY)) {
+      continue;
+    }
+
+    const length = Math.hypot(dirX, dirY);
+    if (length === 0) {
+      continue;
+    }
+
+    player.targetDirX = dirX / length;
+    player.targetDirY = dirY / length;
+  }
+};
+
 export function startTickLoop(): NodeJS.Timeout {
   const world = createWorld();
   const startTime = Date.now();
@@ -65,6 +103,7 @@ export function startTickLoop(): NodeJS.Timeout {
 
   return setInterval(() => {
     world.tick += 1;
+    applyIntents(world);
     updateWorld(world);
     if (world.tick % snapshotEveryNTicks === 0) {
       broadcastSnapshot(createSnapshot(world));
