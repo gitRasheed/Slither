@@ -10,6 +10,8 @@ export type Player = {
   y: number;
   dirX: number;
   dirY: number;
+  targetDirX: number;
+  targetDirY: number;
   speed: number;
   length: number;
 };
@@ -31,6 +33,8 @@ export function createWorld(): World {
         y: 0,
         dirX: 1,
         dirY: 0,
+        targetDirX: 0,
+        targetDirY: 1,
         speed: 120,
         length: 16,
       },
