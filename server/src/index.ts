@@ -1,4 +1,4 @@
-import { createWorld, respawnPlayer } from "./core/world.js";
+import { createWorld } from "./core/world.js";
 import { startGameLoop } from "./core/gameLoop.js";
 import { spawnInitialFood } from "./core/food.js";
 import { TICK_RATE } from "./constants/game.js";
@@ -41,11 +41,5 @@ startGameLoop(world, {
       return;
     }
     sendToClient(player, { type: "dead", killerId: event.killerId });
-    respawnPlayer(world, player);
-    sendToClient(player, {
-      type: "join_ack",
-      playerId: player.id,
-      snakeId: player.snake.id,
-    });
   },
 });

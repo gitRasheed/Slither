@@ -13,9 +13,44 @@ export const handlers = {
 };
 
 let socket: WebSocket | null = null;
+let connectPromise: Promise<void> | null = null;
 
-export function connect(url: string): void {
+export function connect(url: string): Promise<void> {
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    return Promise.resolve();
+  }
+
+  if (connectPromise) {
+    return connectPromise;
+  }
+
   socket = new WebSocket(url);
+  connectPromise = new Promise((resolve, reject) => {
+    if (!socket) {
+      reject(new Error("Socket initialization failed."));
+      return;
+    }
+
+    const onOpen = () => {
+      cleanup();
+      resolve();
+    };
+
+    const onError = () => {
+      cleanup();
+      connectPromise = null;
+      socket = null;
+      reject(new Error("WebSocket connection failed."));
+    };
+
+    const cleanup = () => {
+      socket?.removeEventListener("open", onOpen);
+      socket?.removeEventListener("error", onError);
+    };
+
+    socket.addEventListener("open", onOpen);
+    socket.addEventListener("error", onError);
+  });
 
   socket.addEventListener("message", (event) => {
     if (typeof event.data !== "string") {
@@ -44,11 +79,19 @@ export function connect(url: string): void {
 
   socket.addEventListener("close", () => {
     console.log("[net] socket closed");
+    connectPromise = null;
+    socket = null;
   });
 
   socket.addEventListener("error", () => {
     console.log("[net] socket error");
   });
+
+  return connectPromise;
+}
+
+export function sendJoin(name: string): void {
+  sendMessage({ type: "join", name });
 }
 
 export function sendMove(angle: number): void {

@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Slither Client</title>
     <style>
+      @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&display=swap");
       :root {
         color-scheme: light;
+        font-family: "Outfit", "Segoe UI", sans-serif;
       }
       html,
       body {
@@ -23,10 +25,133 @@
         height: 100%;
         background: radial-gradient(circle at 20% 20%, #1a2233 0%, #0b0d12 55%, #080a0f 100%);
       }
+      #ui {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 10;
+      }
+      .overlay {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(6, 8, 12, 0.68);
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 160ms ease, visibility 160ms ease;
+      }
+      .overlay[data-visible="true"] {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+      .panel {
+        pointer-events: auto;
+        width: min(420px, 90vw);
+        background: rgba(15, 18, 26, 0.92);
+        border: 1px solid rgba(148, 163, 184, 0.28);
+        border-radius: 14px;
+        padding: 28px 26px;
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);
+        text-align: center;
+      }
+      .panel h1 {
+        margin: 0 0 16px;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .panel p {
+        margin: 0 0 18px;
+        color: #cbd5f5;
+        font-size: 14px;
+      }
+      .panel form {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+      }
+      .panel input {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid rgba(148, 163, 184, 0.35);
+        background: rgba(10, 12, 18, 0.9);
+        color: #e2e8f0;
+        padding: 12px 14px;
+        font-size: 15px;
+      }
+      .panel input:focus {
+        outline: 2px solid rgba(125, 211, 252, 0.7);
+        border-color: rgba(125, 211, 252, 0.7);
+      }
+      .panel button {
+        border: none;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 15px;
+        font-weight: 600;
+        color: #0b0d12;
+        background: linear-gradient(135deg, #38bdf8, #22d3ee);
+        cursor: pointer;
+      }
+      .panel button:disabled {
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      .hint {
+        margin-top: 14px;
+        font-size: 13px;
+        color: #94a3b8;
+      }
+      .stat {
+        font-size: 15px;
+        margin: 8px 0;
+      }
+      #death-screen .panel button {
+        margin-top: 14px;
+      }
+      #signup-error {
+        min-height: 18px;
+        color: #fca5a5;
+      }
     </style>
   </head>
   <body>
     <canvas id="game" aria-label="Slither client canvas"></canvas>
+    <div id="ui" aria-live="polite">
+      <div id="signup-screen" class="overlay" data-visible="true">
+        <div class="panel">
+          <h1>Enter the Arena</h1>
+          <p>Choose a name to join the match.</p>
+          <form id="signup-form">
+            <input
+              id="signup-name"
+              name="name"
+              type="text"
+              maxlength="16"
+              placeholder="Your name"
+              autocomplete="off"
+              spellcheck="false"
+              aria-label="Username"
+              required
+            />
+            <button type="submit">Join Game</button>
+          </form>
+          <div id="signup-error" class="hint" role="alert"></div>
+        </div>
+      </div>
+      <div id="death-screen" class="overlay" data-visible="false">
+        <div class="panel">
+          <h1>You Died</h1>
+          <div class="stat">Score: <span id="death-score">0</span></div>
+          <div id="death-killer" class="stat"></div>
+          <button id="respawn-button" type="button">Respawn</button>
+          <div class="hint">Press Space to Restart</div>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

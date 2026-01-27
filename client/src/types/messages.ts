@@ -17,6 +17,7 @@ export type Food = {
 };
 
 export type ClientMessage =
+  | { type: "join"; name: string }
   | { type: "move"; angle: number }
   | { type: "boost"; active: boolean };
 

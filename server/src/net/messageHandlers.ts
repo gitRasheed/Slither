@@ -18,7 +18,10 @@ export function parseClientMessage(data: WebSocket.RawData): ClientMessage | nul
     return null;
   }
 
-  const message = payload as { type?: unknown; angle?: unknown; active?: unknown };
+  const message = payload as { type?: unknown; angle?: unknown; active?: unknown; name?: unknown };
+  if (message.type === "join" && typeof message.name === "string") {
+    return { type: "join", name: message.name };
+  }
   if (message.type === "move" && typeof message.angle === "number") {
     if (!Number.isFinite(message.angle)) {
       return null;
@@ -34,6 +37,9 @@ export function parseClientMessage(data: WebSocket.RawData): ClientMessage | nul
 }
 
 export function handleClientMessage(player: Player, msg: ClientMessage): void {
+  if (msg.type === "join") {
+    return;
+  }
   if (msg.type === "move") {
     player.snake.targetDirection = wrapAngle(msg.angle);
     return;

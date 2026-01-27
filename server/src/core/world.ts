@@ -16,9 +16,9 @@ export function createWorld(): World {
   };
 }
 
-export function addPlayer(world: World, socket: WebSocket): Player {
+export function addPlayer(world: World, socket: WebSocket, name: string): Player {
   const playerId = randomUUID();
-  const snake = createSnake({ ownerId: playerId });
+  const snake = createSnake({ ownerId: playerId, name });
   const player = createPlayer(playerId, socket, snake);
 
   world.players.set(player.id, player);
@@ -37,9 +37,9 @@ export function removePlayer(world: World, playerId: string): void {
   world.snakes.delete(player.snake.id);
 }
 
-export function respawnPlayer(world: World, player: Player): void {
+export function respawnPlayer(world: World, player: Player, name?: string): void {
   world.snakes.delete(player.snake.id);
-  const snake = createSnake({ ownerId: player.id });
+  const snake = createSnake({ ownerId: player.id, name: name ?? player.snake.name });
   player.snake = snake;
   world.snakes.set(snake.id, snake);
 }

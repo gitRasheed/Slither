@@ -16,14 +16,26 @@ let lastAngle: number | null = null;
 let lastSentAt = 0;
 let boostActive = false;
 const pressedKeys = new Set<string>();
+let inputEnabled = false;
+let intervalId: number | null = null;
+let listenersAttached = false;
+let cachedCanvas: HTMLCanvasElement | null = null;
 
 export function initInput(): void {
+  if (listenersAttached) {
+    return;
+  }
+
   const canvas = getCanvas();
   if (!canvas) {
     throw new Error("Canvas not initialized.");
   }
+  cachedCanvas = canvas;
 
   const onMouseMove = (event: MouseEvent) => {
+    if (!inputEnabled) {
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const centerX = rect.width / 2;
     const centerY = rect.height / 2;
@@ -35,6 +47,9 @@ export function initInput(): void {
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
+    if (!inputEnabled) {
+      return;
+    }
     if (event.code === "Space") {
       event.preventDefault();
       if (!boostActive) {
@@ -55,6 +70,9 @@ export function initInput(): void {
   };
 
   const onKeyUp = (event: KeyboardEvent) => {
+    if (!inputEnabled) {
+      return;
+    }
     if (event.code === "Space") {
       event.preventDefault();
       if (boostActive) {
@@ -77,14 +95,48 @@ export function initInput(): void {
   canvas.addEventListener("mousemove", onMouseMove);
   window.addEventListener("keydown", onKeyDown);
   window.addEventListener("keyup", onKeyUp);
+  listenersAttached = true;
+}
 
-  setInterval(() => {
+export function enableInput(): void {
+  if (!cachedCanvas) {
+    initInput();
+  }
+  if (inputEnabled) {
+    return;
+  }
+  inputEnabled = true;
+  if (intervalId !== null) {
+    return;
+  }
+  intervalId = window.setInterval(() => {
+    if (!inputEnabled) {
+      return;
+    }
     const vector = getKeyboardVector();
     if (!vector) {
       return;
     }
     sendAngleFromVector(vector.x, vector.y);
   }, MIN_INTERVAL_MS);
+}
+
+export function disableInput(): void {
+  if (!inputEnabled && intervalId === null) {
+    return;
+  }
+  inputEnabled = false;
+  lastAngle = null;
+  lastSentAt = 0;
+  pressedKeys.clear();
+  if (boostActive) {
+    boostActive = false;
+    sendBoost(false);
+  }
+  if (intervalId !== null) {
+    window.clearInterval(intervalId);
+    intervalId = null;
+  }
 }
 
 export function getCurrentAngle(): number {

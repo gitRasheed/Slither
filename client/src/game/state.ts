@@ -85,6 +85,18 @@ export function getInterpolatedState(now = performance.now()): BufferedState | n
   };
 }
 
+export function getLatestState(): BufferedState | null {
+  if (stateBuffer.length === 0) {
+    return null;
+  }
+  return stateBuffer[stateBuffer.length - 1];
+}
+
+export function resetStateBuffer(): void {
+  stateBuffer.length = 0;
+  timeOffsetMs = null;
+}
+
 export function setPlayerId(id: string): void {
   localPlayerId = id;
 }

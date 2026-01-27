@@ -278,6 +278,7 @@ describe("Multi-client isolation", () => {
         client = new WebSocket(url);
         buffer = createMessageBuffer(client);
         await waitForOpen(client);
+        client.send(JSON.stringify({ type: "join", name: "alpha" }));
 
         const joinAck = await buffer.waitForJoinAck();
         expect(typeof joinAck.playerId).toBe("string");
@@ -313,10 +314,12 @@ describe("Multi-client isolation", () => {
         clientA = new WebSocket(url);
         bufferA = createMessageBuffer(clientA);
         await waitForOpen(clientA);
+        clientA.send(JSON.stringify({ type: "join", name: "alpha" }));
 
         clientB = new WebSocket(url);
         bufferB = createMessageBuffer(clientB);
         await waitForOpen(clientB);
+        clientB.send(JSON.stringify({ type: "join", name: "bravo" }));
 
         const joinA = await bufferA.waitForJoinAck();
         const joinB = await bufferB.waitForJoinAck();

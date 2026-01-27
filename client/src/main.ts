@@ -1,39 +1,159 @@
-import { initInput } from "./input/controls";
-import { connect, handlers } from "./net/socket";
+import { disableInput, enableInput, initInput } from "./input/controls";
+import { getPhase, getUsername, setPhase, setUsername } from "./game/phase";
+import {
+  getInterpolatedState,
+  getLatestState,
+  getSnakeId,
+  pushState,
+  resetStateBuffer,
+  setPlayerId,
+  setSnakeId,
+} from "./game/state";
+import { connect, handlers, sendJoin } from "./net/socket";
 import { initCanvas, drawFrame } from "./render/canvas";
-import { getInterpolatedState, pushState, setPlayerId, setSnakeId } from "./game/state";
+import {
+  initOverlays,
+  setDeathStats,
+  setDeathVisible,
+  setRespawnEnabled,
+  setSignupError,
+  setSignupName,
+  setSignupVisible,
+} from "./ui/overlays";
 
 const wsProtocol = location.protocol === "https:" ? "wss" : "ws";
 const defaultWsUrl = `${wsProtocol}://${location.hostname}:8080`;
 const wsUrl = import.meta.env.VITE_WS_URL ?? defaultWsUrl;
 
+let renderHandle: number | null = null;
+let joinInFlight = false;
+
+const startRenderLoop = (): void => {
+  if (renderHandle !== null) {
+    return;
+  }
+
+  const loop = () => {
+    if (getPhase() !== "playing") {
+      renderHandle = null;
+      return;
+    }
+    const state = getInterpolatedState(performance.now());
+    if (state) {
+      drawFrame(state);
+    }
+    renderHandle = requestAnimationFrame(loop);
+  };
+
+  renderHandle = requestAnimationFrame(loop);
+};
+
+const stopRenderLoop = (): void => {
+  if (renderHandle === null) {
+    return;
+  }
+  cancelAnimationFrame(renderHandle);
+  renderHandle = null;
+};
+
+const startPlaying = (): void => {
+  setPhase("playing");
+  setSignupVisible(false);
+  setDeathVisible(false);
+  setRespawnEnabled(true);
+  enableInput();
+  startRenderLoop();
+};
+
+const stopPlaying = (): void => {
+  disableInput();
+  stopRenderLoop();
+};
+
+const getScoreFromLatestState = (): number => {
+  const latest = getLatestState();
+  if (!latest) {
+    return 0;
+  }
+  const localId = getSnakeId();
+  if (!localId) {
+    return 0;
+  }
+  const snake = latest.snakes.find((entry) => entry.id === localId);
+  return snake ? snake.segments.length : 0;
+};
+
 handlers.onStateMessage = (message) => {
+  if (getPhase() !== "playing") {
+    return;
+  }
   pushState(message, performance.now());
 };
 
 handlers.onJoinAckMessage = (message) => {
+  resetStateBuffer();
   setPlayerId(message.playerId);
   setSnakeId(message.snakeId);
+  joinInFlight = false;
+  startPlaying();
 };
 
 handlers.onDeathMessage = (message) => {
-  if (message.killerId) {
-    console.log(`[client] killed by ${message.killerId}`);
-  } else {
-    console.log("[client] died");
+  if (getPhase() !== "playing") {
+    return;
+  }
+  stopPlaying();
+  setPhase("dead");
+  setDeathStats({ score: getScoreFromLatestState(), killerId: message.killerId });
+  setDeathVisible(true);
+  setRespawnEnabled(true);
+};
+
+const requestJoin = async (name: string): Promise<void> => {
+  if (joinInFlight) {
+    return;
+  }
+  joinInFlight = true;
+  try {
+    await connect(wsUrl);
+    sendJoin(name);
+  } catch (error) {
+    joinInFlight = false;
+    setSignupVisible(true);
+    setSignupError("Connection failed. Try again.", true);
   }
 };
 
-connect(wsUrl);
+const handleSignup = (name: string): void => {
+  setSignupError("", false);
+  setUsername(name);
+  setSignupVisible(false);
+  setPhase("signup");
+  void requestJoin(name);
+};
+
+const handleRespawn = (): void => {
+  if (getPhase() !== "dead") {
+    return;
+  }
+  const name = getUsername();
+  if (!name) {
+    setSignupVisible(true);
+    return;
+  }
+  setRespawnEnabled(false);
+  void requestJoin(name);
+};
+
 initCanvas();
 initInput();
+disableInput();
+initOverlays({ onSubmitName: handleSignup, onRespawn: handleRespawn });
 
-const loop = () => {
-  const state = getInterpolatedState(performance.now());
-  if (state) {
-    drawFrame(state);
-  }
-  requestAnimationFrame(loop);
-};
-
-requestAnimationFrame(loop);
+setPhase("signup");
+setSignupVisible(true);
+setDeathVisible(false);
+const storedName = getUsername();
+if (storedName) {
+  setSignupName(storedName);
+}
