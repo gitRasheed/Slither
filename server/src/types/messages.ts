@@ -6,4 +6,5 @@ export type ClientMessage =
 
 export type ServerMessage =
   | { type: "state"; time: number; snakes: SnakeView[]; foods: Food[] }
-  | { type: "dead"; killerId?: string };
+  | { type: "dead"; killerId?: string }
+  | { type: "join_ack"; playerId: string };

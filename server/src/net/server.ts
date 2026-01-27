@@ -2,7 +2,7 @@ import { WebSocketServer } from "ws";
 import type { WebSocket } from "ws";
 import { addPlayer, removePlayer } from "../core/world.js";
 import type { Player, World } from "../types/game.js";
-import { handleClientMessage, parseClientMessage } from "./messageHandlers.js";
+import { handleClientMessage, parseClientMessage, sendToClient } from "./messageHandlers.js";
 
 export function startWebSocketServer(
   world: World,
@@ -15,6 +15,7 @@ export function startWebSocketServer(
   server.on("connection", (socket) => {
     const player = addPlayer(world, socket);
     playersBySocket.set(socket, player);
+    sendToClient(player, { type: "join_ack", playerId: player.id });
 
     socket.on("message", (data) => {
       const message = parseClientMessage(data);
