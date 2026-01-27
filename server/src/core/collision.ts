@@ -108,20 +108,6 @@ export function checkSnakeSnakeCollisions(world: World): DeathEvent[] {
       }
     }
 
-    if (killed.has(snake.id)) {
-      continue;
-    }
-
-    const selfSegments = snake.segments;
-    for (let index = 2; index < selfSegments.length - 1; index += 1) {
-      const a = selfSegments[index];
-      const b = selfSegments[index + 1];
-      if (pointToSegmentDistanceSq(head, a, b) <= bodyHitRadiusSq) {
-        deaths.push(killSnake(snake, world));
-        killed.add(snake.id);
-        break;
-      }
-    }
   }
 
   return deaths;

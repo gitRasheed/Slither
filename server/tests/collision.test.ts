@@ -63,4 +63,32 @@ describe("Collision system", () => {
     expect(killedA?.killerId).toBe(snakeB.id);
     expect(world.snakes.size).toBe(1);
   });
+
+  it("ignores self collision against own body", () => {
+    const world = createWorld();
+
+    const snake = createSnake({
+      ownerId: "self",
+      position: { x: 0, y: 0 },
+      direction: 0,
+      length: 140,
+    });
+
+    snake.segments = [
+      { x: 0, y: 0 },
+      { x: 50, y: 0 },
+      { x: 50, y: 10 },
+      { x: -10, y: 10 },
+      { x: -10, y: 20 },
+    ];
+    snake.length = 160;
+
+    world.snakes.set(snake.id, snake);
+
+    const events = checkSnakeSnakeCollisions(world);
+    const selfDeath = events.find((event) => event.snakeId === snake.id);
+
+    expect(selfDeath).toBeUndefined();
+    expect(world.snakes.has(snake.id)).toBe(true);
+  });
 });
