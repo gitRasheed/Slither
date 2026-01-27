@@ -12,11 +12,14 @@ const ZOOM = 1.0;
 const FOOD_RADIUS = 4;
 const SNAKE_WIDTH = 18;
 const HEAD_RADIUS = 12;
+const ARENA_RADIUS = 2000;
+const WALL_WIDTH = 3;
 
 const colors = {
   food: "#facc15",
   hud: "#e5e7eb",
   hudMuted: "#94a3b8",
+  wall: "#f8fafc",
 };
 
 let canvas: HTMLCanvasElement | null = null;
@@ -63,6 +66,7 @@ export function drawFrame(state: BufferedState): void {
     }
   }
 
+  drawArena(ctx);
   drawFoods(ctx, state);
   drawSnakes(ctx, state, focus?.id);
   ctx.restore();
@@ -114,6 +118,16 @@ function drawFoods(ctx: CanvasRenderingContext2D, state: BufferedState): void {
     ctx.arc(food.position.x, food.position.y, FOOD_RADIUS, 0, Math.PI * 2);
     ctx.fill();
   }
+}
+
+function drawArena(ctx: CanvasRenderingContext2D): void {
+  ctx.save();
+  ctx.strokeStyle = colors.wall;
+  ctx.lineWidth = WALL_WIDTH;
+  ctx.beginPath();
+  ctx.arc(0, 0, ARENA_RADIUS, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
 }
 
 function drawSnakes(
