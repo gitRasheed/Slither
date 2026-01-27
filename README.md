@@ -1,18 +1,34 @@
 # Slither Multiplayer
 
-A real-time, server-authoritative multiplayer snake game built with TypeScript, WebSockets, and Canvas. Includes client-side interpolation, HUD overlays, player join lifecycle, radar minimap, and a leaderboard.
+A server-authoritative, real-time multiplayer snake game built with TypeScript and WebSockets. Features include:
 
-## Overview
+* Canvas-based interpolated rendering
+* Name tags above snakes
+* Join/death/respawn lifecycle
+* Leaderboard sorted by length
+* Radar minimap showing real-time positions
+* Signup and death screen overlays
+* Clean client/server message protocol with full TypeScript typing
 
-* Server: Node.js WebSocket server at 30 TPS, managing world state, collisions, and input.
-* Client: Vite-powered frontend with Canvas rendering, DOM overlays, input handling, and local interpolation.
-* Protocol: Clients send `join`, `move`, `boost`; server sends `join_ack`, `state`, `dead`.
+**Architecture**
+
+* Node.js WebSocket server (30 ticks/sec)
+* Vite + Canvas frontend
+* Message-driven architecture (`join`, `move`, `boost` → `state`, `dead`, `join_ack`)
+* Fully client-interpolated view for smooth rendering
+* Stateless WebSocket connections (no cookies or sessions)
+
+**Tech Stack**
+
+* Node.js v20
+* TypeScript 5
+* Vite 5
+* HTML Canvas (no WebGL)
+* Pure WebSocket (no Socket.IO or polling)
 
 ## Local Development
 
-**Two-terminal setup**
-
-Server:
+**Terminal 1 – Server**
 
 ```bash
 cd server
@@ -20,70 +36,56 @@ npm install
 npm run dev
 ```
 
-Client:
+**Terminal 2 – Client**
 
 ```bash
 cd client
 npm install
-npm run dev
+VITE_WS_URL=ws://localhost:8080 npm run dev
 ```
 
-Visit: `http://localhost:5173`
+Visit: [http://localhost:5173](http://localhost:5173)
 
-**Single command (server + client)**
+## Remote Testing (ngrok – recommended)
 
-```bash
-node scripts/dev.mjs --mode local
-```
-
-## Remote Testing Options
-
-### 1. Port Forwarding
-
-* Forward ports `8080` (WebSocket) and `5173` (client).
-* Run:
-
-```bash
-node scripts/dev.mjs --mode tunnel --ws ws://<your-public-ip>:8080
-```
-
-* Share: `http://<your-public-ip>:5173`
-
-### 2. Ngrok
-
-1. Add your ngrok auth token (via npx or install):
+1. Authenticate ngrok (install or use npx):
 
 ```bash
 npx ngrok@latest config add-authtoken <YOUR_TOKEN>
 ```
 
-2. Start tunnels in separate terminals:
+2. In two terminals, tunnel both ports:
 
 ```bash
-npx ngrok http 8080
-npx ngrok http 5173
+npx ngrok http 8080     # WebSocket server
+npx ngrok http 5173     # Client
 ```
 
-3. Start dev with the WebSocket tunnel:
+3. Start the client with the WebSocket tunnel URL:
 
 ```bash
-node scripts/dev.mjs --mode tunnel --ws wss://<ws-tunnel-id>.ngrok.io
+VITE_WS_URL=wss://<ws-tunnel-id>.ngrok.io npm run dev
 ```
 
-4. Share the frontend tunnel URL:
+4. Share the frontend tunnel:
 
 ```
 https://<frontend-tunnel-id>.ngrok.io
 ```
 
-If ngrok restarts, URLs change—restart with the updated tunnel.
+If ngrok restarts, you’ll need to update the `VITE_WS_URL` and restart the client.
 
-## Features
+## Remote Testing (manual port forwarding)
 
-* Server-authoritative simulation
-* Player join, death, and respawn lifecycle
-* Interpolated Canvas rendering
-* Names displayed above snakes
-* Top-10 leaderboard by length
-* Radar minimap with real-time positions
-* Integration and unit tested (join, input, collisions)
+1. Forward ports `8080` (server) and `5173` (client) from your router to your machine.
+2. Start the client:
+
+```bash
+VITE_WS_URL=ws://<your-public-ip>:8080 npm run dev
+```
+
+3. Share the client:
+
+```
+http://<your-public-ip>:5173
+```
