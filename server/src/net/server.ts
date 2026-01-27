@@ -15,7 +15,11 @@ export function startWebSocketServer(
   server.on("connection", (socket) => {
     const player = addPlayer(world, socket);
     playersBySocket.set(socket, player);
-    sendToClient(player, { type: "join_ack", playerId: player.id });
+    sendToClient(player, {
+      type: "join_ack",
+      playerId: player.id,
+      snakeId: player.snake.id,
+    });
 
     socket.on("message", (data) => {
       const message = parseClientMessage(data);

@@ -68,10 +68,10 @@ export function parseServerMessage(raw: string): ServerMessage | null {
 
   if (data.type === "join_ack") {
     const message = data as Partial<JoinAckMessage>;
-    if (!isString(message.playerId)) {
+    if (!isString(message.playerId) || !isString(message.snakeId)) {
       return null;
     }
-    return { type: "join_ack", playerId: message.playerId };
+    return { type: "join_ack", playerId: message.playerId, snakeId: message.snakeId };
   }
 
   return null;

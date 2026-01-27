@@ -42,5 +42,10 @@ startGameLoop(world, {
     }
     sendToClient(player, { type: "dead", killerId: event.killerId });
     respawnPlayer(world, player);
+    sendToClient(player, {
+      type: "join_ack",
+      playerId: player.id,
+      snakeId: player.snake.id,
+    });
   },
 });

@@ -1,7 +1,7 @@
 import { initInput } from "./input/controls";
 import { connect, handlers } from "./net/socket";
 import { initCanvas, drawFrame } from "./render/canvas";
-import { getInterpolatedState, pushState, setPlayerId } from "./game/state";
+import { getInterpolatedState, pushState, setPlayerId, setSnakeId } from "./game/state";
 
 const wsProtocol = location.protocol === "https:" ? "wss" : "ws";
 const defaultWsUrl = `${wsProtocol}://${location.hostname}:8080`;
@@ -13,6 +13,7 @@ handlers.onStateMessage = (message) => {
 
 handlers.onJoinAckMessage = (message) => {
   setPlayerId(message.playerId);
+  setSnakeId(message.snakeId);
 };
 
 handlers.onDeathMessage = (message) => {

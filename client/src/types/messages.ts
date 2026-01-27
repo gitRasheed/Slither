@@ -29,6 +29,6 @@ export type StateMessage = {
 
 export type DeathMessage = { type: "dead"; killerId?: string };
 
-export type JoinAckMessage = { type: "join_ack"; playerId: string };
+export type JoinAckMessage = { type: "join_ack"; playerId: string; snakeId: string };
 
 export type ServerMessage = StateMessage | DeathMessage | JoinAckMessage;

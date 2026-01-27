@@ -1,5 +1,5 @@
 import type { BufferedState } from "../game/state";
-import { getPlayerId } from "../game/state";
+import { getSnakeId } from "../game/state";
 import type { SnakeView } from "../types/messages";
 
 export type Viewport = {
@@ -55,7 +55,7 @@ export function drawFrame(state: BufferedState): void {
   const scale = viewport.dpr * ZOOM;
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
 
-  const focus = getFocusSnake(state.snakes, getPlayerId());
+  const focus = getFocusSnake(state.snakes, getSnakeId());
 
   ctx.save();
   ctx.translate(viewport.width / (2 * ZOOM), viewport.height / (2 * ZOOM));
