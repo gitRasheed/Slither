@@ -1,14 +1,11 @@
 import { config } from "./config.js";
-import { clamp, wrapAngle } from "./math.js";
 import type { World } from "./types.js";
 
-const {
-  tickRate,
-  orbSpawnIntervalTicks,
-  baseTurnRate,
-  lengthTurnPenalty,
-} = config.simulation;
+const { tickRate, orbSpawnIntervalTicks } = config.simulation;
 const tickDeltaSeconds = 1 / tickRate;
+const orbRadius = 3;
+const playerRadius = 8;
+const orbConsumeDistanceSq = (orbRadius + playerRadius) ** 2;
 
 export function updateWorld(world: World): void {
   if (world.tick % orbSpawnIntervalTicks === 0) {
@@ -25,17 +22,20 @@ export function updateWorld(world: World): void {
   }
 
   for (const player of world.players) {
-    const currentAngle = Math.atan2(player.dirY, player.dirX);
-    const targetAngle = Math.atan2(player.targetDirY, player.targetDirX);
-    const delta = wrapAngle(targetAngle - currentAngle);
+    for (let index = world.orbs.length - 1; index >= 0; index -= 1) {
+      const orb = world.orbs[index];
+      const dx = orb.x - player.x;
+      const dy = orb.y - player.y;
+      if (dx * dx + dy * dy <= orbConsumeDistanceSq) {
+        world.orbs.splice(index, 1);
+        player.length += 1;
+      }
+    }
+  }
 
-    const turnRate = baseTurnRate / (1 + player.length * lengthTurnPenalty);
-    const maxTurn = turnRate * tickDeltaSeconds;
-    const clampedDelta = clamp(delta, -maxTurn, maxTurn);
-    const newAngle = currentAngle + clampedDelta;
-
-    player.dirX = Math.cos(newAngle);
-    player.dirY = Math.sin(newAngle);
+  for (const player of world.players) {
+    player.dirX = player.targetDirX;
+    player.dirY = player.targetDirY;
 
     player.x += player.dirX * player.speed * tickDeltaSeconds;
     player.y += player.dirY * player.speed * tickDeltaSeconds;

@@ -1,0 +1,198 @@
+import {
+  ARENA_RADIUS,
+  FOOD_PER_DEATH,
+  FOOD_RADIUS,
+  FOOD_VALUE,
+  MAX_LENGTH,
+  SNAKE_RADIUS,
+} from "../constants/game.js";
+import { createFood } from "../entities/Food.js";
+import { distanceSq, pointToSegmentDistanceSq, randomPointInCircle } from "./math.js";
+import type { DeathEvent, Food, Point, Snake, World } from "../types/game.js";
+
+const consumeDistanceSq = (FOOD_RADIUS + SNAKE_RADIUS) ** 2;
+const bodyHitRadiusSq = (SNAKE_RADIUS * 1.05) ** 2;
+
+export function checkSnakeFoodCollisions(world: World): void {
+  for (const snake of world.snakes.values()) {
+    const head = snake.segments[0];
+    if (!head) {
+      continue;
+    }
+
+    for (const [foodId, food] of world.foods) {
+      if (distanceSq(head, food.position) <= consumeDistanceSq) {
+        world.foods.delete(foodId);
+        snake.length = Math.min(MAX_LENGTH, snake.length + food.value);
+      }
+    }
+  }
+}
+
+export function checkSnakeSnakeCollisions(world: World): DeathEvent[] {
+  const deaths: DeathEvent[] = [];
+  const killed = new Set<string>();
+  const snakes = Array.from(world.snakes.values());
+
+  for (let i = 0; i < snakes.length; i += 1) {
+    const snakeA = snakes[i];
+    if (killed.has(snakeA.id)) {
+      continue;
+    }
+
+    const headA = snakeA.segments[0];
+    if (!headA) {
+      continue;
+    }
+
+    for (let j = i + 1; j < snakes.length; j += 1) {
+      const snakeB = snakes[j];
+      if (killed.has(snakeB.id)) {
+        continue;
+      }
+
+      const headB = snakeB.segments[0];
+      if (!headB) {
+        continue;
+      }
+
+      const headDistanceSq = distanceSq(headA, headB);
+      if (headDistanceSq <= (SNAKE_RADIUS * 2) ** 2) {
+        deaths.push(killSnake(snakeA, world, snakeB.id));
+        deaths.push(killSnake(snakeB, world, snakeA.id));
+        killed.add(snakeA.id);
+        killed.add(snakeB.id);
+      }
+
+      if (killed.has(snakeA.id)) {
+        break;
+      }
+    }
+  }
+
+  for (const snake of snakes) {
+    if (killed.has(snake.id)) {
+      continue;
+    }
+
+    const head = snake.segments[0];
+    if (!head) {
+      continue;
+    }
+
+    const arenaRadius = Math.max(0, ARENA_RADIUS - SNAKE_RADIUS);
+    if (head.x * head.x + head.y * head.y > arenaRadius * arenaRadius) {
+      deaths.push(killSnake(snake, world));
+      killed.add(snake.id);
+      continue;
+    }
+
+    for (const other of snakes) {
+      if (other.id === snake.id || killed.has(other.id)) {
+        continue;
+      }
+
+      const segments = other.segments;
+      for (let index = 0; index < segments.length - 1; index += 1) {
+        const a = segments[index];
+        const b = segments[index + 1];
+        if (pointToSegmentDistanceSq(head, a, b) <= bodyHitRadiusSq) {
+          deaths.push(killSnake(snake, world, other.id));
+          killed.add(snake.id);
+          break;
+        }
+      }
+
+      if (killed.has(snake.id)) {
+        break;
+      }
+    }
+
+    if (killed.has(snake.id)) {
+      continue;
+    }
+
+    const selfSegments = snake.segments;
+    for (let index = 2; index < selfSegments.length - 1; index += 1) {
+      const a = selfSegments[index];
+      const b = selfSegments[index + 1];
+      if (pointToSegmentDistanceSq(head, a, b) <= bodyHitRadiusSq) {
+        deaths.push(killSnake(snake, world));
+        killed.add(snake.id);
+        break;
+      }
+    }
+  }
+
+  return deaths;
+}
+
+export function killSnake(snake: Snake, world: World, killerId?: string): DeathEvent {
+  world.snakes.delete(snake.id);
+
+  const spawned = spawnFoodFromSnake(snake);
+  for (const food of spawned) {
+    world.foods.set(food.id, food);
+  }
+
+  return {
+    snakeId: snake.id,
+    ownerId: snake.ownerId,
+    killerId,
+  };
+}
+
+export function spawnFoodFromSnake(snake: Snake): Food[] {
+  const foods: Food[] = [];
+  const maxCount = Math.max(1, Math.floor(snake.length / FOOD_VALUE));
+  const count = Math.min(FOOD_PER_DEATH, maxCount);
+
+  if (count <= 0) {
+    return foods;
+  }
+
+  const spacing = snake.length / (count + 1);
+  for (let i = 1; i <= count; i += 1) {
+    const point = pointAlongSegments(snake.segments, spacing * i);
+    const jitter = randomPointInCircle(SNAKE_RADIUS);
+    foods.push(
+      createFood({
+        x: point.x + jitter.x,
+        y: point.y + jitter.y,
+      })
+    );
+  }
+
+  return foods;
+}
+
+function pointAlongSegments(segments: Point[], distance: number): Point {
+  if (segments.length === 0) {
+    return { x: 0, y: 0 };
+  }
+
+  let remaining = Math.max(0, distance);
+  for (let i = 0; i < segments.length - 1; i += 1) {
+    const a = segments[i];
+    const b = segments[i + 1];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const segmentLength = Math.hypot(dx, dy);
+
+    if (segmentLength === 0) {
+      continue;
+    }
+
+    if (remaining <= segmentLength) {
+      const t = remaining / segmentLength;
+      return {
+        x: a.x + dx * t,
+        y: a.y + dy * t,
+      };
+    }
+
+    remaining -= segmentLength;
+  }
+
+  return segments[segments.length - 1];
+}

@@ -1,4 +1,4 @@
-import { state, type PlayerSnapshot, type WorldSnapshot } from "./state";
+import type { PlayerSnapshot, WorldSnapshot } from "../../shared/types";
 
 export type Viewport = {
   width: number;
@@ -13,16 +13,22 @@ const colors = {
   text: "#e5e7eb",
 };
 
-const getLocalPlayer = (snapshot: WorldSnapshot): PlayerSnapshot | null => {
+const getFocusPlayer = (
+  snapshot: WorldSnapshot,
+  localPlayerId: number | null
+): PlayerSnapshot | null => {
   if (snapshot.players.length === 0) {
     return null;
   }
 
-  if (state.localPlayerId === null) {
-    return snapshot.players[0];
+  if (localPlayerId !== null) {
+    const match = snapshot.players.find((player) => player.id === localPlayerId);
+    if (match) {
+      return match;
+    }
   }
 
-  return snapshot.players.find((player) => player.id === state.localPlayerId) ?? snapshot.players[0];
+  return snapshot.players[0];
 };
 
 const drawOrbs = (ctx: CanvasRenderingContext2D, snapshot: WorldSnapshot): void => {
@@ -69,37 +75,27 @@ const drawHud = (ctx: CanvasRenderingContext2D, tick: number | null): void => {
   ctx.fillText(label, 12, 12);
 };
 
-export function startRenderLoop(
+export function renderSnapshot(
   ctx: CanvasRenderingContext2D,
-  viewport: Viewport
+  viewport: Viewport,
+  snapshot: WorldSnapshot,
+  localPlayerId: number | null
 ): void {
-  const render = () => {
-    const { width, height, dpr } = viewport;
-    if (width <= 0 || height <= 0) {
-      requestAnimationFrame(render);
-      return;
-    }
+  const { width, height, dpr } = viewport;
+  if (width <= 0 || height <= 0) {
+    return;
+  }
 
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
 
-    const snapshot = state.latestSnapshot;
-    if (snapshot) {
-      const localPlayer = getLocalPlayer(snapshot);
-      ctx.save();
-      if (localPlayer) {
-        ctx.translate(width / 2 - localPlayer.x, height / 2 - localPlayer.y);
-      }
-      drawOrbs(ctx, snapshot);
-      drawPlayers(ctx, snapshot, localPlayer?.id ?? null);
-      ctx.restore();
-      drawHud(ctx, snapshot.tick);
-    } else {
-      drawHud(ctx, null);
-    }
-
-    requestAnimationFrame(render);
-  };
-
-  requestAnimationFrame(render);
+  const focusPlayer = getFocusPlayer(snapshot, localPlayerId);
+  ctx.save();
+  if (focusPlayer) {
+    ctx.translate(width / 2 - focusPlayer.x, height / 2 - focusPlayer.y);
+  }
+  drawOrbs(ctx, snapshot);
+  drawPlayers(ctx, snapshot, focusPlayer?.id ?? null);
+  ctx.restore();
+  drawHud(ctx, snapshot.tick);
 }

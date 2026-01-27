@@ -1,6 +1,7 @@
 import { connect } from "./network";
 import { startInput } from "./input";
-import { startRenderLoop, type Viewport } from "./render";
+import { renderSnapshot, type Viewport } from "./render";
+import { state } from "./state";
 
 const canvas = document.getElementById("game");
 if (!(canvas instanceof HTMLCanvasElement)) {
@@ -39,6 +40,17 @@ const network = connect(wsUrl);
 startInput({
   canvas,
   sendIntent: network.sendIntent,
+  getSnapshot: () => state.latestSnapshot,
+  getLocalPlayerId: () => state.localPlayerId,
+  getViewport: () => ({ width: viewport.width, height: viewport.height }),
 });
 
-startRenderLoop(context, viewport);
+const loop = () => {
+  const snapshot = state.latestSnapshot;
+  if (snapshot) {
+    renderSnapshot(context, viewport, snapshot, state.localPlayerId);
+  }
+  requestAnimationFrame(loop);
+};
+
+requestAnimationFrame(loop);

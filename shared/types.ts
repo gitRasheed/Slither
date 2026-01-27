@@ -28,6 +28,8 @@ export type PlayerSnapshot = {
   y: number;
   dirX: number;
   dirY: number;
+  targetDirX: number;
+  targetDirY: number;
   length: number;
 };
 
@@ -41,4 +43,5 @@ export type WorldSnapshot = {
   tick: number;
   players: PlayerSnapshot[];
   orbs: OrbSnapshot[];
+  localPlayerId?: number;
 };

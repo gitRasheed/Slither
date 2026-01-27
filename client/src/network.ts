@@ -1,4 +1,5 @@
-import { setConnectionStatus, setSnapshot, type WorldSnapshot } from "./state";
+import { setSnapshot } from "./state";
+import type { WorldSnapshot } from "../../shared/types";
 
 export type Network = {
   socket: WebSocket;
@@ -16,25 +17,13 @@ const isWorldSnapshot = (value: unknown): value is WorldSnapshot => {
   return (
     isNumber(snapshot.tick) &&
     Array.isArray(snapshot.players) &&
-    Array.isArray(snapshot.orbs)
+    Array.isArray(snapshot.orbs) &&
+    (snapshot.localPlayerId === undefined || isNumber(snapshot.localPlayerId))
   );
 };
 
 export function connect(url: string): Network {
   const socket = new WebSocket(url);
-  setConnectionStatus("connecting");
-
-  socket.addEventListener("open", () => {
-    setConnectionStatus("open");
-  });
-
-  socket.addEventListener("close", () => {
-    setConnectionStatus("closed");
-  });
-
-  socket.addEventListener("error", () => {
-    setConnectionStatus("error");
-  });
 
   socket.addEventListener("message", (event) => {
     if (typeof event.data !== "string") {

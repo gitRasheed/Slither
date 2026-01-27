@@ -1,11 +1,15 @@
 type InputOptions = {
   canvas: HTMLCanvasElement;
   sendIntent: (dirX: number, dirY: number) => void;
+  getSnapshot: () => { players: { id: number; x: number; y: number }[] } | null;
+  getLocalPlayerId: () => number | null;
+  getViewport: () => { width: number; height: number };
 };
 
 const minAngleDelta = (2 * Math.PI) / 180;
 const minIntervalMs = 50;
 const minVectorLength = 2;
+const invertInput = true;
 
 const wrapAngle = (angle: number): number => {
   if (angle > Math.PI) {
@@ -17,7 +21,31 @@ const wrapAngle = (angle: number): number => {
   return angle;
 };
 
-export function startInput({ canvas, sendIntent }: InputOptions): void {
+const getFocusPlayer = (
+  snapshot: { players: { id: number; x: number; y: number }[] },
+  localPlayerId: number | null
+) => {
+  if (snapshot.players.length === 0) {
+    return null;
+  }
+
+  if (localPlayerId !== null) {
+    const match = snapshot.players.find((player) => player.id === localPlayerId);
+    if (match) {
+      return match;
+    }
+  }
+
+  return snapshot.players[0];
+};
+
+export function startInput({
+  canvas,
+  sendIntent,
+  getSnapshot,
+  getLocalPlayerId,
+  getViewport,
+}: InputOptions): void {
   let lastAngle: number | null = null;
   let lastSentAt = 0;
   let logCounter = 0;
@@ -33,8 +61,24 @@ export function startInput({ canvas, sendIntent }: InputOptions): void {
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    const dx = x - rect.width / 2;
-    const dy = y - rect.height / 2;
+    const snapshot = getSnapshot();
+    const localPlayerId = getLocalPlayerId();
+    if (!snapshot) {
+      return;
+    }
+
+    const focusPlayer = getFocusPlayer(snapshot, localPlayerId);
+    if (!focusPlayer) {
+      return;
+    }
+
+    const viewport = getViewport();
+    const worldMouseX = x - viewport.width / 2 + focusPlayer.x;
+    const worldMouseY = y - viewport.height / 2 + focusPlayer.y;
+    const rawDx = worldMouseX - focusPlayer.x;
+    const rawDy = worldMouseY - focusPlayer.y;
+    const dx = invertInput ? -rawDx : rawDx;
+    const dy = invertInput ? -rawDy : rawDy;
     const length = Math.hypot(dx, dy);
 
     if (shouldLog) {
