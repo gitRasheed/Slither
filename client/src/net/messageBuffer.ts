@@ -19,6 +19,7 @@ const isPoint = (value: unknown): value is { x: number; y: number } =>
 const isSnakeView = (value: unknown): value is StateMessage["snakes"][number] =>
   isObject(value) &&
   isString(value.id) &&
+  isString(value.name) &&
   Array.isArray(value.segments) &&
   value.segments.every(isPoint) &&
   typeof value.isBoosting === "boolean" &&

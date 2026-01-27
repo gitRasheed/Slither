@@ -22,6 +22,7 @@ export type Snake = {
 
 export type SnakeView = {
   id: string;
+  name: string;
   segments: Point[];
   isBoosting: boolean;
   color: string;

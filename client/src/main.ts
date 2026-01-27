@@ -11,6 +11,12 @@ import {
 } from "./game/state";
 import { connect, handlers, sendJoin } from "./net/socket";
 import { initCanvas, drawFrame } from "./render/canvas";
+import { initRadar, renderRadar, setRadarVisible } from "./render/radar";
+import {
+  initLeaderboard,
+  setLeaderboardVisible,
+  updateLeaderboard,
+} from "./ui/leaderboard";
 import {
   initOverlays,
   setDeathStats,
@@ -41,6 +47,7 @@ const startRenderLoop = (): void => {
     const state = getInterpolatedState(performance.now());
     if (state) {
       drawFrame(state);
+      renderRadar(state, getSnakeId());
     }
     renderHandle = requestAnimationFrame(loop);
   };
@@ -61,6 +68,8 @@ const startPlaying = (): void => {
   setSignupVisible(false);
   setDeathVisible(false);
   setRespawnEnabled(true);
+  setLeaderboardVisible(true);
+  setRadarVisible(true);
   enableInput();
   startRenderLoop();
 };
@@ -68,6 +77,8 @@ const startPlaying = (): void => {
 const stopPlaying = (): void => {
   disableInput();
   stopRenderLoop();
+  setLeaderboardVisible(false);
+  setRadarVisible(false);
 };
 
 const getScoreFromLatestState = (): number => {
@@ -88,6 +99,7 @@ handlers.onStateMessage = (message) => {
     return;
   }
   pushState(message, performance.now());
+  updateLeaderboard(message.snakes, getSnakeId());
 };
 
 handlers.onJoinAckMessage = (message) => {
@@ -149,10 +161,14 @@ initCanvas();
 initInput();
 disableInput();
 initOverlays({ onSubmitName: handleSignup, onRespawn: handleRespawn });
+initLeaderboard();
+initRadar();
 
 setPhase("signup");
 setSignupVisible(true);
 setDeathVisible(false);
+setLeaderboardVisible(false);
+setRadarVisible(false);
 const storedName = getUsername();
 if (storedName) {
   setSignupName(storedName);

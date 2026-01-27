@@ -35,6 +35,7 @@ export function interpolateSnakes(
 
     result.push({
       id: snakeB.id,
+      name: snakeB.name,
       segments,
       isBoosting: snakeB.isBoosting,
       color: snakeB.color,

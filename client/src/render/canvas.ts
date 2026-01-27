@@ -1,6 +1,7 @@
 import type { BufferedState } from "../game/state";
 import { getSnakeId } from "../game/state";
 import type { SnakeView } from "../types/messages";
+import { ARENA_RADIUS, HEAD_RADIUS, ZOOM } from "./constants";
 
 export type Viewport = {
   width: number;
@@ -8,12 +9,16 @@ export type Viewport = {
   dpr: number;
 };
 
-const ZOOM = 1.0;
 const FOOD_RADIUS = 4;
 const SNAKE_WIDTH = 18;
-const HEAD_RADIUS = 12;
-const ARENA_RADIUS = 2000;
 const WALL_WIDTH = 3;
+const LABEL_FONT_LOCAL = 14;
+const LABEL_FONT_OTHER = 12;
+const LABEL_PADDING_X = 6;
+const LABEL_PADDING_Y = 4;
+const LABEL_GAP = 8;
+const LABEL_RADIUS = 6;
+const LABEL_CULL_MARGIN = 120;
 
 const colors = {
   food: "#facc15",
@@ -69,6 +74,7 @@ export function drawFrame(state: BufferedState): void {
   drawArena(ctx);
   drawFoods(ctx, state);
   drawSnakes(ctx, state, focus?.id);
+  drawLabels(ctx, state, focus ?? null, focus?.id ?? null);
   ctx.restore();
 
   drawHud(ctx, state, focus?.id ?? null);
@@ -192,4 +198,86 @@ function drawHud(
     ctx.fillStyle = colors.hudMuted;
     ctx.fillText(`player ${localId.slice(0, 8)}`, 12, 30);
   }
+}
+
+function drawLabels(
+  ctx: CanvasRenderingContext2D,
+  state: BufferedState,
+  focus: SnakeView | null,
+  localId: string | null
+): void {
+  const focusHead = focus?.segments[0];
+  const viewHalfWidth = viewport.width / (2 * ZOOM);
+  const viewHalfHeight = viewport.height / (2 * ZOOM);
+
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  for (const snake of state.snakes) {
+    const head = snake.segments[0];
+    if (!head) {
+      continue;
+    }
+
+    if (focusHead) {
+      const dx = head.x - focusHead.x;
+      const dy = head.y - focusHead.y;
+      if (
+        Math.abs(dx) > viewHalfWidth + LABEL_CULL_MARGIN ||
+        Math.abs(dy) > viewHalfHeight + LABEL_CULL_MARGIN
+      ) {
+        continue;
+      }
+    }
+
+    const displayName = snake.name.trim() || "anon";
+    const isLocal = localId !== null && snake.id === localId;
+    const fontSize = isLocal ? LABEL_FONT_LOCAL : LABEL_FONT_OTHER;
+    ctx.font = `${fontSize}px Outfit, "Segoe UI", sans-serif`;
+
+    const metrics = ctx.measureText(displayName);
+    const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.8;
+    const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
+    const textHeight = ascent + descent;
+    const rectWidth = metrics.width + LABEL_PADDING_X * 2;
+    const rectHeight = textHeight + LABEL_PADDING_Y * 2;
+    const rectX = head.x - rectWidth / 2;
+    const rectY = head.y - HEAD_RADIUS - rectHeight - LABEL_GAP;
+
+    ctx.fillStyle = isLocal ? "rgba(15, 23, 42, 0.78)" : "rgba(8, 12, 20, 0.65)";
+    drawRoundedRect(ctx, rectX, rectY, rectWidth, rectHeight, LABEL_RADIUS);
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.fillStyle = isLocal ? "#f8fafc" : "#e2e8f0";
+    ctx.fillText(displayName, head.x, rectY + rectHeight / 2);
+  }
+
+  ctx.restore();
+}
+
+function drawRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number
+): void {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + width - r, y);
+  ctx.arcTo(x + width, y, x + width, y + r, r);
+  ctx.lineTo(x + width, y + height - r);
+  ctx.arcTo(x + width, y + height, x + width - r, y + height, r);
+  ctx.lineTo(x + r, y + height);
+  ctx.arcTo(x, y + height, x, y + height - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
 }

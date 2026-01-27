@@ -61,6 +61,7 @@ export function createSnake(options: CreateSnakeOptions): Snake {
 export function toSnakeView(snake: Snake): SnakeView {
   return {
     id: snake.id,
+    name: snake.name,
     segments: snake.segments.map((segment) => ({
       x: segment.x,
       y: segment.y,
