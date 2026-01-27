@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { WebSocket } from "ws";
 import type { AddressInfo } from "net";
-import { startWebSocketServer, type WorldSnapshot } from "../src/network.js";
+import { startWebSocketServer } from "../src/network.js";
+import type { WorldSnapshot } from "../../shared/types.js";
 import { startTickLoop } from "../src/tick.js";
 
 const waitForOpen = (socket: WebSocket, timeoutMs = 2000): Promise<void> =>

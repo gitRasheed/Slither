@@ -1,13 +1,13 @@
-import { config } from "./config.js";
+import { config } from "../../shared/config.js";
+import type { WorldSnapshot } from "../../shared/types.js";
+import { updateWorld } from "../../shared/systems.js";
+import { createWorld } from "../../shared/world.js";
 import {
   broadcastSnapshot,
   consumeLatestIntent,
   getClientPlayerIndex,
   getClientSockets,
-  type WorldSnapshot,
 } from "./network.js";
-import { updateWorld } from "./systems.js";
-import { createWorld } from "./world.js";
 
 const tickIntervalMs = 1000 / config.simulation.tickRate;
 const snapshotEveryNTicks = 1;

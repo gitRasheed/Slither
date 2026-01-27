@@ -1,23 +1,7 @@
 import { WebSocket, WebSocketServer } from "ws";
+import type { WorldSnapshot } from "../../shared/types.js";
 
 const VERBOSE = process.env.VERBOSE === "true" || process.argv.includes("--verbose");
-
-export type WorldSnapshot = {
-  tick: number;
-  players: {
-    id: number;
-    x: number;
-    y: number;
-    dirX: number;
-    dirY: number;
-    length: number;
-  }[];
-  orbs: {
-    id: number;
-    x: number;
-    y: number;
-  }[];
-};
 
 export type ClientIntent = {
   type: "set_direction";

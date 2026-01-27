@@ -1,4 +1,4 @@
-import "./config.js";
+import "../../shared/config.js";
 import { getClientCount, startWebSocketServer } from "./network.js";
 import { startTickLoop } from "./tick.js";
 

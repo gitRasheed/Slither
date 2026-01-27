@@ -1,23 +1,6 @@
-export type PlayerSnapshot = {
-  id: number;
-  x: number;
-  y: number;
-  dirX: number;
-  dirY: number;
-  length: number;
-};
+import type { WorldSnapshot } from "../../shared/types";
 
-export type OrbSnapshot = {
-  id: number;
-  x: number;
-  y: number;
-};
-
-export type WorldSnapshot = {
-  tick: number;
-  players: PlayerSnapshot[];
-  orbs: OrbSnapshot[];
-};
+export type { PlayerSnapshot, OrbSnapshot, WorldSnapshot } from "../../shared/types";
 
 export type ConnectionStatus = "connecting" | "open" | "closed" | "error";
 

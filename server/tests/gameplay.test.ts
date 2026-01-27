@@ -3,27 +3,7 @@ import { WebSocket } from "ws";
 import type { AddressInfo } from "net";
 import { startWebSocketServer } from "../src/network.js";
 import { startTickLoop } from "../src/tick.js";
-
-type PlayerSnapshot = {
-  id: number;
-  x: number;
-  y: number;
-  dirX: number;
-  dirY: number;
-  length: number;
-};
-
-type OrbSnapshot = {
-  id: number;
-  x: number;
-  y: number;
-};
-
-type WorldSnapshot = {
-  tick: number;
-  players: PlayerSnapshot[];
-  orbs: OrbSnapshot[];
-};
+import type { WorldSnapshot } from "../../shared/types.js";
 
 const waitForOpen = (socket: WebSocket, timeoutMs = 2000): Promise<void> =>
   new Promise((resolve, reject) => {

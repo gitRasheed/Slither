@@ -1,5 +1,6 @@
 import { config } from "./config.js";
-import type { World } from "./world.js";
+import { clamp, wrapAngle } from "./math.js";
+import type { World } from "./types.js";
 
 const {
   tickRate,
@@ -26,17 +27,11 @@ export function updateWorld(world: World): void {
   for (const player of world.players) {
     const currentAngle = Math.atan2(player.dirY, player.dirX);
     const targetAngle = Math.atan2(player.targetDirY, player.targetDirX);
-    let delta = targetAngle - currentAngle;
-
-    if (delta > Math.PI) {
-      delta -= Math.PI * 2;
-    } else if (delta < -Math.PI) {
-      delta += Math.PI * 2;
-    }
+    const delta = wrapAngle(targetAngle - currentAngle);
 
     const turnRate = baseTurnRate / (1 + player.length * lengthTurnPenalty);
     const maxTurn = turnRate * tickDeltaSeconds;
-    const clampedDelta = Math.max(-maxTurn, Math.min(maxTurn, delta));
+    const clampedDelta = clamp(delta, -maxTurn, maxTurn);
     const newAngle = currentAngle + clampedDelta;
 
     player.dirX = Math.cos(newAngle);
