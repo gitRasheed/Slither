@@ -188,15 +188,24 @@ function drawHud(
   state: BufferedState,
   localId: string | null
 ): void {
+  const baseX = 12;
+  const baseY = 12;
+  const lineHeight = 18;
   ctx.setTransform(viewport.dpr, 0, 0, viewport.dpr, 0, 0);
   ctx.fillStyle = colors.hud;
   ctx.font = "12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
   ctx.textBaseline = "top";
-  ctx.fillText(`time ${Math.round(state.time)}`, 12, 12);
+  ctx.fillText(`time ${Math.round(state.time)}`, baseX, baseY);
 
   if (localId) {
     ctx.fillStyle = colors.hudMuted;
-    ctx.fillText(`player ${localId.slice(0, 8)}`, 12, 30);
+    ctx.fillText(`player ${localId.slice(0, 8)}`, baseX, baseY + lineHeight);
+
+    const localSnake = state.snakes.find((snake) => snake.id === localId);
+    if (localSnake) {
+      ctx.fillStyle = colors.hud;
+      ctx.fillText(`your length: ${localSnake.segments.length}`, baseX, baseY + lineHeight * 2);
+    }
   }
 }
 

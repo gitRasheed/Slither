@@ -1,4 +1,9 @@
-import { disableInput, enableInput, initInput } from "./input/controls";
+import {
+  disableInput,
+  enableInput,
+  initInput,
+  setTouchControlsVisible,
+} from "./input/controls";
 import { getPhase, getUsername, setPhase, setUsername } from "./game/phase";
 import {
   getInterpolatedState,
@@ -70,6 +75,7 @@ const startPlaying = (): void => {
   setRespawnEnabled(true);
   setLeaderboardVisible(true);
   setRadarVisible(true);
+  setTouchControlsVisible(true);
   enableInput();
   startRenderLoop();
 };
@@ -79,6 +85,7 @@ const stopPlaying = (): void => {
   stopRenderLoop();
   setLeaderboardVisible(false);
   setRadarVisible(false);
+  setTouchControlsVisible(false);
 };
 
 const getScoreFromLatestState = (): number => {
@@ -169,6 +176,7 @@ setSignupVisible(true);
 setDeathVisible(false);
 setLeaderboardVisible(false);
 setRadarVisible(false);
+setTouchControlsVisible(false);
 const storedName = getUsername();
 if (storedName) {
   setSignupName(storedName);
