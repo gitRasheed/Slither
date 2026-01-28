@@ -1,6 +1,7 @@
 import {
   ARENA_RADIUS,
   FOOD_RADIUS,
+  FOOD_MAX_COUNT,
   INITIAL_FOOD_COUNT,
 } from "../constants/game.js";
 import { createFood } from "../entities/Food.js";
@@ -13,6 +14,9 @@ export function spawnInitialFood(world: World): void {
 
 export function spawnRandomFood(world: World, count: number): Food[] {
   const foods: Food[] = [];
+  if (world.foods.size >= FOOD_MAX_COUNT) {
+    return foods;
+  }
   const radius = Math.max(0, ARENA_RADIUS - FOOD_RADIUS);
 
   for (let i = 0; i < count; i += 1) {

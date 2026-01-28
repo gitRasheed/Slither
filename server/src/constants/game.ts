@@ -15,6 +15,7 @@ export const FOOD_VALUE = 12;
 export const INITIAL_FOOD_COUNT = 200;
 export const FOOD_SPAWN_INTERVAL_TICKS = 15;
 export const FOOD_SPAWN_COUNT = 4;
+export const FOOD_MAX_COUNT = 250;
 
 export const START_LENGTH = 120;
 export const MIN_LENGTH = 40;
