@@ -1,5 +1,6 @@
 import {
   ARENA_RADIUS,
+  FOOD_COLLISION_CELL_SIZE,
   FOOD_RADIUS,
   FOOD_VALUE,
   MAX_LENGTH,
@@ -11,18 +12,46 @@ import type { DeathEvent, Food, Point, Snake, World } from "../types/game.js";
 
 const consumeDistanceSq = (FOOD_RADIUS + SNAKE_RADIUS) ** 2;
 const bodyHitRadiusSq = (SNAKE_RADIUS * 1.05) ** 2;
+const foodCellRadius = 2;
 
 export function checkSnakeFoodCollisions(world: World): void {
+  const foodGrid = new Map<string, Food[]>();
+  for (const food of world.foods.values()) {
+    const key = getFoodCellKey(food.position.x, food.position.y);
+    const bucket = foodGrid.get(key);
+    if (bucket) {
+      bucket.push(food);
+    } else {
+      foodGrid.set(key, [food]);
+    }
+  }
+
   for (const snake of world.snakes.values()) {
     const head = snake.segments[0];
     if (!head) {
       continue;
     }
 
-    for (const [foodId, food] of world.foods) {
-      if (distanceSq(head, food.position) <= consumeDistanceSq) {
-        world.foods.delete(foodId);
-        snake.length = Math.min(MAX_LENGTH, snake.length + food.value);
+    const baseCellX = getFoodCellIndex(head.x);
+    const baseCellY = getFoodCellIndex(head.y);
+
+    for (let dx = -foodCellRadius; dx <= foodCellRadius; dx += 1) {
+      for (let dy = -foodCellRadius; dy <= foodCellRadius; dy += 1) {
+        const key = getFoodCellKeyFromCell(baseCellX + dx, baseCellY + dy);
+        const bucket = foodGrid.get(key);
+        if (!bucket) {
+          continue;
+        }
+
+        for (const food of bucket) {
+          if (!world.foods.has(food.id)) {
+            continue;
+          }
+          if (distanceSq(head, food.position) <= consumeDistanceSq) {
+            world.foods.delete(food.id);
+            snake.length = Math.min(MAX_LENGTH, snake.length + food.value);
+          }
+        }
       }
     }
   }
@@ -175,4 +204,16 @@ function pointAlongSegments(segments: Point[], distance: number): Point {
   }
 
   return segments[segments.length - 1];
+}
+
+function getFoodCellIndex(value: number): number {
+  return Math.floor(value / FOOD_COLLISION_CELL_SIZE);
+}
+
+function getFoodCellKeyFromCell(cellX: number, cellY: number): string {
+  return `${cellX},${cellY}`;
+}
+
+function getFoodCellKey(x: number, y: number): string {
+  return getFoodCellKeyFromCell(getFoodCellIndex(x), getFoodCellIndex(y));
 }

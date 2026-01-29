@@ -1,9 +1,11 @@
+import { performance } from "node:perf_hooks";
 import {
   BOOST_LENGTH_DRAIN_PER_SECOND,
   BOOST_SPEED,
   FOOD_SPAWN_COUNT,
   FOOD_SPAWN_INTERVAL_TICKS,
   FOOD_VALUE,
+  FOODS_PUBLISH_INTERVAL_TICKS,
   MIN_LENGTH,
   SNAKE_RADIUS,
   TICK_INTERVAL_MS,
@@ -14,6 +16,7 @@ import { createFood } from "../entities/Food.js";
 import { toSnakeView } from "../entities/Snake.js";
 import type { DeathEvent, Food, Snake, World } from "../types/game.js";
 import type { ServerMessage } from "../types/messages.js";
+import { recordTick, recordWorldSize } from "../metrics/index.js";
 import { checkSnakeFoodCollisions, checkSnakeSnakeCollisions } from "./collision.js";
 import { spawnRandomFood } from "./food.js";
 import { clamp, randomPointInCircle, wrapAngle } from "./math.js";
@@ -22,6 +25,7 @@ export type GameLoopCallbacks = {
   onState?: (message: ServerMessage) => void;
   onDeath?: (event: DeathEvent) => void;
 };
+
 
 export function startGameLoop(
   world: World,
@@ -33,6 +37,7 @@ export function startGameLoop(
 }
 
 export function tick(world: World, callbacks: GameLoopCallbacks = {}): void {
+  const tickStart = performance.now();
   world.tick += 1;
   const deltaSeconds = 1 / TICK_RATE;
 
@@ -65,6 +70,9 @@ export function tick(world: World, callbacks: GameLoopCallbacks = {}): void {
   if (callbacks.onState) {
     broadcastGameState(world, callbacks.onState);
   }
+
+  recordTick(performance.now() - tickStart, TICK_INTERVAL_MS);
+  recordWorldSize(world.players.size, world.snakes.size, world.foods.size);
 }
 
 export function updateSnakeMovement(snake: Snake, deltaSeconds = 1 / TICK_RATE): void {
@@ -145,18 +153,24 @@ export function broadcastGameState(
   world: World,
   broadcast: (message: ServerMessage) => void
 ): void {
-  const message: ServerMessage = {
-    type: "state",
-    time: world.tick * TICK_INTERVAL_MS,
-    snakes: Array.from(world.snakes.values()).map((snake) => toSnakeView(snake)),
-    foods: Array.from(world.foods.values()).map((food) => ({
-      id: food.id,
-      position: { x: food.position.x, y: food.position.y },
-      value: food.value,
-    })),
-  };
+  const time = world.tick * TICK_INTERVAL_MS;
+  const snakes = Array.from(world.snakes.values()).map((snake) => toSnakeView(snake));
 
-  broadcast(message);
+  broadcast({ type: "state", time, snakes, foods: [] });
+
+  if (world.tick % FOODS_PUBLISH_INTERVAL_TICKS !== 0) {
+    return;
+  }
+
+  const ids: string[] = [];
+  const positions: number[] = [];
+  const values: number[] = [];
+  for (const food of world.foods.values()) {
+    ids.push(food.id);
+    positions.push(food.position.x, food.position.y);
+    values.push(food.value);
+  }
+  broadcast({ type: "foods", time, ids, positions, values });
 }
 
 function applyBoostDrain(snake: Snake, deltaSeconds: number): Food[] {

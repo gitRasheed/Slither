@@ -1,0 +1,15 @@
+{
+  "wsPort": 0,
+  "metricsPort": 1990,
+  "profiles": {
+    "med-100": {
+      "clients": 100,
+      "moveRateHz": 20,
+      "boostToggleRateHz": 1,
+      "warmupSeconds": 10,
+      "steadySeconds": 30,
+      "seed": 1337
+    }
+  },
+  "order": ["med-100"]
+}

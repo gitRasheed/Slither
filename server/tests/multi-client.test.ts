@@ -6,6 +6,7 @@ import { startGameLoop } from "../src/core/gameLoop.js";
 import { spawnInitialFood } from "../src/core/food.js";
 import { broadcastToAll } from "../src/net/messageHandlers.js";
 import { startWebSocketServer } from "../src/net/server.js";
+import { pack, unpack } from "msgpackr";
 
 type JoinAckMessage = {
   type: "join_ack";
@@ -119,30 +120,11 @@ const closeSocket = async (socket: WebSocket | null): Promise<void> => {
 };
 
 const parseMessage = (data: WebSocket.RawData): ServerMessage | null => {
-  const text = typeof data === "string" ? data : data.toString("utf-8");
-  let parsed: unknown;
-
   try {
-    parsed = JSON.parse(text);
+    return unpack(data) as ServerMessage;
   } catch {
     return null;
   }
-
-  if (typeof parsed !== "object" || parsed === null) {
-    return null;
-  }
-
-  const message = parsed as ServerMessage;
-  if (message.type === "state") {
-    if (
-      typeof (message as StateMessage).time !== "number" ||
-      !Array.isArray((message as StateMessage).snakes)
-    ) {
-      return null;
-    }
-  }
-
-  return message;
 };
 
 const createMessageBuffer = (socket: WebSocket) => {
@@ -278,7 +260,7 @@ describe("Multi-client isolation", () => {
         client = new WebSocket(url);
         buffer = createMessageBuffer(client);
         await waitForOpen(client);
-        client.send(JSON.stringify({ type: "join", name: "alpha" }));
+        client.send(pack({ v: 1, type: "join", name: "alpha" }));
 
         const joinAck = await buffer.waitForJoinAck();
         expect(typeof joinAck.playerId).toBe("string");
@@ -314,15 +296,17 @@ describe("Multi-client isolation", () => {
         clientA = new WebSocket(url);
         bufferA = createMessageBuffer(clientA);
         await waitForOpen(clientA);
-        clientA.send(JSON.stringify({ type: "join", name: "alpha" }));
+        clientA.send(pack({ v: 1, type: "join", name: "alpha" }));
 
         clientB = new WebSocket(url);
         bufferB = createMessageBuffer(clientB);
         await waitForOpen(clientB);
-        clientB.send(JSON.stringify({ type: "join", name: "bravo" }));
+        clientB.send(pack({ v: 1, type: "join", name: "bravo" }));
 
         const joinA = await bufferA.waitForJoinAck();
         const joinB = await bufferB.waitForJoinAck();
+
+
 
         expect(joinA.playerId).not.toBe(joinB.playerId);
         expect(joinA.snakeId).not.toBe(joinB.snakeId);
@@ -341,7 +325,7 @@ describe("Multi-client isolation", () => {
         }
 
         const targetAngle = wrapAngle(baselineHeadingA + Math.PI / 2);
-        clientA.send(JSON.stringify({ type: "move", angle: targetAngle }));
+        clientA.send(pack({ v: 1, type: "move", angle: targetAngle }));
 
         await waitFor(() => {
           const latest = bufferA?.getLatestState();

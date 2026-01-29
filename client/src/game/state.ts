@@ -1,4 +1,4 @@
-import type { Food, SnakeView } from "../types/messages";
+import type { Food, FoodsMessage, SnakeView } from "../types/messages";
 import { interpolatePoint, interpolateSnakes } from "./interpolate";
 
 export type BufferedState = {
@@ -12,6 +12,7 @@ const INTERPOLATION_DELAY_MS = 100;
 const MAX_HISTORY_MS = 1000;
 
 const stateBuffer: BufferedState[] = [];
+const foodsBuffer: { time: number; foods: Food[] }[] = [];
 let localPlayerId: string | undefined;
 let localSnakeId: string | undefined;
 let localEliminations = 0;
@@ -23,10 +24,15 @@ export function pushState(newState: BufferedState, receivedAt = performance.now(
     return;
   }
 
-  timeOffsetMs = receivedAt - newState.time;
-  stateBuffer.push(newState);
+  const foods = getFoodsForTime(newState.time);
+  const nextState = foods
+    ? { ...newState, foods }
+    : newState;
 
-  const minTime = newState.time - MAX_HISTORY_MS;
+  timeOffsetMs = receivedAt - nextState.time;
+  stateBuffer.push(nextState);
+
+  const minTime = nextState.time - MAX_HISTORY_MS;
   while (stateBuffer.length > 0 && stateBuffer[0].time < minTime) {
     stateBuffer.shift();
   }
@@ -95,6 +101,7 @@ export function getLatestState(): BufferedState | null {
 
 export function resetStateBuffer(): void {
   stateBuffer.length = 0;
+  foodsBuffer.length = 0;
   timeOffsetMs = null;
 }
 
@@ -122,6 +129,30 @@ export function getEliminations(): number {
   return localEliminations;
 }
 
+export function pushFoods(message: FoodsMessage): void {
+  const last = foodsBuffer[foodsBuffer.length - 1];
+  if (last && message.time <= last.time) {
+    return;
+  }
+
+  const foods: Food[] = [];
+  for (let i = 0; i < message.ids.length; i += 1) {
+    const x = message.positions[i * 2];
+    const y = message.positions[i * 2 + 1];
+    foods.push({ id: message.ids[i], position: { x, y }, value: message.values[i] });
+  }
+
+  foodsBuffer.push({ time: message.time, foods });
+
+  const minTime = message.time - MAX_HISTORY_MS;
+  while (foodsBuffer.length > 0 && foodsBuffer[0].time < minTime) {
+    foodsBuffer.shift();
+  }
+  while (foodsBuffer.length > MAX_BUFFER_SIZE) {
+    foodsBuffer.shift();
+  }
+}
+
 function interpolateFoods(a: Food[], b: Food[], alpha: number): Food[] {
   const mapA = new Map(a.map((food) => [food.id, food]));
   const result: Food[] = [];
@@ -141,4 +172,25 @@ function interpolateFoods(a: Food[], b: Food[], alpha: number): Food[] {
   }
 
   return result;
+}
+
+function getFoodsForTime(time: number): Food[] | null {
+  if (foodsBuffer.length === 0) {
+    return null;
+  }
+
+  if (time < foodsBuffer[0].time) {
+    return null;
+  }
+
+  let selected = foodsBuffer[0];
+  for (const entry of foodsBuffer) {
+    if (entry.time <= time) {
+      selected = entry;
+    } else {
+      break;
+    }
+  }
+
+  return selected.foods;
 }

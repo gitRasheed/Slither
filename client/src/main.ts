@@ -9,6 +9,7 @@ import {
   getInterpolatedState,
   getLatestState,
   getSnakeId,
+  pushFoods,
   pushState,
   resetStateBuffer,
   setEliminations,
@@ -108,6 +109,13 @@ handlers.onStateMessage = (message) => {
   }
   pushState(message, performance.now());
   updateLeaderboard(message.snakes, getSnakeId());
+};
+
+handlers.onFoodsMessage = (message) => {
+  if (getPhase() !== "playing") {
+    return;
+  }
+  pushFoods(message);
 };
 
 handlers.onJoinAckMessage = (message) => {

@@ -30,6 +30,14 @@ export type StateMessage = {
   foods: Food[];
 };
 
+export type FoodsMessage = {
+  type: "foods";
+  time: number;
+  ids: string[];
+  positions: number[];
+  values: number[];
+};
+
 export type DeathMessage = { type: "dead"; killerId?: string; killerName?: string };
 
 export type JoinAckMessage = {
@@ -41,4 +49,9 @@ export type JoinAckMessage = {
 
 export type StatsMessage = { type: "stats"; eliminations: number };
 
-export type ServerMessage = StateMessage | DeathMessage | JoinAckMessage | StatsMessage;
+export type ServerMessage =
+  | StateMessage
+  | FoodsMessage
+  | DeathMessage
+  | JoinAckMessage
+  | StatsMessage;

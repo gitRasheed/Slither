@@ -1,9 +1,17 @@
+import { unpack } from "msgpackr";
 import type {
   DeathMessage,
+  FoodsMessage,
   JoinAckMessage,
   ServerMessage,
   StateMessage,
 } from "../types/messages";
+
+type ServerPayload = {
+  v?: number;
+  type?: unknown;
+  [key: string]: unknown;
+};
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
@@ -33,16 +41,22 @@ const isFood = (value: unknown): value is StateMessage["foods"][number] =>
   isPoint(value.position) &&
   isNumber(value.value);
 
-export function parseServerMessage(raw: string): ServerMessage | null {
-  let data: unknown;
+const isNumberArray = (value: unknown): value is number[] =>
+  Array.isArray(value) && value.every(isNumber);
+
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every(isString);
+
+export function parseServerMessage(raw: ArrayBuffer): ServerMessage | null {
+  let data: ServerPayload;
 
   try {
-    data = JSON.parse(raw);
+    data = unpack(new Uint8Array(raw)) as ServerPayload;
   } catch {
     return null;
   }
 
-  if (!isObject(data) || typeof data.type !== "string") {
+  if (!isObject(data) || data.v !== 1 || typeof data.type !== "string") {
     return null;
   }
 
@@ -58,6 +72,26 @@ export function parseServerMessage(raw: string): ServerMessage | null {
       return null;
     }
     return message as StateMessage;
+  }
+
+  if (data.type === "foods") {
+    const message = data as Partial<FoodsMessage>;
+    if (!isNumber(message.time)) {
+      return null;
+    }
+    if (!isStringArray(message.ids) || !isNumberArray(message.positions)) {
+      return null;
+    }
+    if (!isNumberArray(message.values)) {
+      return null;
+    }
+    if (message.positions.length !== message.ids.length * 2) {
+      return null;
+    }
+    if (message.values.length !== message.ids.length) {
+      return null;
+    }
+    return message as FoodsMessage;
   }
 
   if (data.type === "dead") {

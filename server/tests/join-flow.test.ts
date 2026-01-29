@@ -5,6 +5,7 @@ import { createWorld } from "../src/core/world.js";
 import { tick } from "../src/core/gameLoop.js";
 import { spawnInitialFood } from "../src/core/food.js";
 import { sendToClient } from "../src/net/messageHandlers.js";
+import { pack, unpack } from "msgpackr";
 import { startWebSocketServer } from "../src/net/server.js";
 import { ARENA_RADIUS } from "../src/constants/game.js";
 
@@ -128,25 +129,15 @@ const closeSocket = async (socket: WebSocket | null): Promise<void> => {
 };
 
 const parseMessage = (data: WebSocket.RawData): AnyMessage | null => {
-  const text = typeof data === "string" ? data : data.toString("utf-8");
-  let parsed: unknown;
-
   try {
-    parsed = JSON.parse(text);
+    const message = unpack(data) as AnyMessage;
+    if (!message || typeof message !== "object" || typeof message.type !== "string") {
+      return null;
+    }
+    return message;
   } catch {
     return null;
   }
-
-  if (typeof parsed !== "object" || parsed === null) {
-    return null;
-  }
-
-  const message = parsed as AnyMessage;
-  if (typeof message.type !== "string") {
-    return null;
-  }
-
-  return message;
 };
 
 const createMessageBuffer = (socket: WebSocket) => {
@@ -253,12 +244,11 @@ describe("Message validation", () => {
         await waitForOpen(client);
 
         const sentAt = Date.now();
-        client.send("{bad json");
-        client.send(JSON.stringify({ type: "oops" }));
-        client.send(JSON.stringify({ type: "move" }));
-        client.send('{"type":"move","angle":1e309}');
-        client.send(JSON.stringify({ type: "boost", active: "nope" }));
-        client.send(JSON.stringify({ type: "join", name: 123 }));
+        client.send(Buffer.from([0x02, 0x01]));
+        client.send(pack({ v: 2, type: "join", name: "alpha" }));
+        client.send(pack({ v: 1, type: "oops" }));
+        client.send(pack({ v: 1, type: "move" }));
+        client.send(pack({ v: 1, type: "boost", active: "nope" }));
 
         await buffer.expectNoMessage("join_ack", { since: sentAt, timeoutMs: 300 });
         expect(world.players.size).toBe(0);
@@ -288,8 +278,8 @@ describe("Message validation", () => {
         await waitForOpen(client);
 
         const sentAt = Date.now();
-        client.send(JSON.stringify({ type: "join", name: "   " }));
-        client.send(JSON.stringify({ type: "join", name: "a".repeat(17) }));
+        client.send(pack({ v: 1, type: "join", name: "   " }));
+        client.send(pack({ v: 1, type: "join", name: "a".repeat(17) }));
 
         await buffer.expectNoMessage("join_ack", { since: sentAt, timeoutMs: 300 });
         expect(world.players.size).toBe(0);
@@ -321,7 +311,7 @@ describe("Disconnect cleanup", () => {
         await waitForOpen(client);
 
         const joinSentAt = Date.now();
-        client.send(JSON.stringify({ type: "join", name: "alpha" }));
+        client.send(pack({ v: 1, type: "join", name: "alpha" }));
         await buffer.waitFor("join_ack", { since: joinSentAt });
 
         expect(world.players.size).toBe(1);
@@ -375,7 +365,7 @@ describe("Join flow", () => {
         await bufferB.expectNoMessage("join_ack", { timeoutMs: 200 });
 
         const joinSentAt = Date.now();
-        clientA.send(JSON.stringify({ type: "join", name: "alpha" }));
+        clientA.send(pack({ v: 1, type: "join", name: "alpha" }));
         const joinAckA = await bufferA.waitFor("join_ack", { since: joinSentAt });
 
         expect(typeof joinAckA.playerId).toBe("string");
@@ -386,7 +376,7 @@ describe("Join flow", () => {
         expect(world.snakes.size).toBe(1);
 
         const joinSentBAt = Date.now();
-        clientB.send(JSON.stringify({ type: "join", name: "bravo" }));
+        clientB.send(pack({ v: 1, type: "join", name: "bravo" }));
         const joinAckB = await bufferB.waitFor("join_ack", { since: joinSentBAt });
 
         expect(typeof joinAckB.playerId).toBe("string");
@@ -421,7 +411,7 @@ describe("Join flow", () => {
         await waitForOpen(client);
 
         const joinSentAt = Date.now();
-        client.send(JSON.stringify({ type: "join", name: "solo" }));
+        client.send(pack({ v: 1, type: "join", name: "solo" }));
         const joinAck = await buffer.waitFor("join_ack", { since: joinSentAt });
         const snakeId = joinAck.snakeId;
         if (typeof snakeId !== "string") {
@@ -478,7 +468,7 @@ describe("Join flow", () => {
         await waitForOpen(client);
 
         const firstJoinAt = Date.now();
-        client.send(JSON.stringify({ type: "join", name: "reborn" }));
+        client.send(pack({ v: 1, type: "join", name: "reborn" }));
         const firstJoin = await buffer.waitFor("join_ack", { since: firstJoinAt });
         const firstSnakeId = firstJoin.snakeId;
         if (typeof firstSnakeId !== "string") {
@@ -506,7 +496,7 @@ describe("Join flow", () => {
         await buffer.waitFor("dead", { since: Date.now() - 1000 });
 
         const secondJoinAt = Date.now();
-        client.send(JSON.stringify({ type: "join", name: "reborn" }));
+        client.send(pack({ v: 1, type: "join", name: "reborn" }));
         const secondJoin = await buffer.waitFor("join_ack", { since: secondJoinAt });
         const secondSnakeId = secondJoin.snakeId;
         if (typeof secondSnakeId !== "string") {

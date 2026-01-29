@@ -1,14 +1,17 @@
 import type {
   ClientMessage,
   DeathMessage,
+  FoodsMessage,
   JoinAckMessage,
   StatsMessage,
   StateMessage,
 } from "../types/messages";
 import { parseServerMessage } from "./messageBuffer";
+import { pack } from "msgpackr";
 
 export const handlers = {
   onStateMessage: (_msg: StateMessage) => {},
+  onFoodsMessage: (_msg: FoodsMessage) => {},
   onDeathMessage: (_msg: DeathMessage) => {},
   onJoinAckMessage: (_msg: JoinAckMessage) => {},
   onStatsMessage: (_msg: StatsMessage) => {},
@@ -27,6 +30,7 @@ export function connect(url: string): Promise<void> {
   }
 
   socket = new WebSocket(url);
+  socket.binaryType = "arraybuffer";
   connectPromise = new Promise((resolve, reject) => {
     if (!socket) {
       reject(new Error("Socket initialization failed."));
@@ -55,7 +59,7 @@ export function connect(url: string): Promise<void> {
   });
 
   socket.addEventListener("message", (event) => {
-    if (typeof event.data !== "string") {
+    if (!(event.data instanceof ArrayBuffer)) {
       return;
     }
 
@@ -66,6 +70,11 @@ export function connect(url: string): Promise<void> {
 
     if (message.type === "state") {
       handlers.onStateMessage(message);
+      return;
+    }
+
+    if (message.type === "foods") {
+      handlers.onFoodsMessage(message);
       return;
     }
 
@@ -117,5 +126,5 @@ function sendMessage(message: ClientMessage): void {
     return;
   }
 
-  socket.send(JSON.stringify(message));
+  socket.send(pack({ v: 1, ...message }));
 }
