@@ -6,6 +6,7 @@ export function createPlayer(id: string, socket: WebSocket, snake: Snake): Playe
     id,
     socket,
     snake,
+    eliminations: 0,
     connectedAt: Date.now(),
   };
 }

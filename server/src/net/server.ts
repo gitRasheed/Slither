@@ -49,6 +49,7 @@ export function startWebSocketServer(
           type: "join_ack",
           playerId: player.id,
           snakeId: player.snake.id,
+          eliminations: player.eliminations,
         });
         return;
       }

@@ -64,7 +64,10 @@ export function parseServerMessage(raw: string): ServerMessage | null {
     if (message.killerId !== undefined && !isString(message.killerId)) {
       return null;
     }
-    return { type: "dead", killerId: message.killerId };
+    if (message.killerName !== undefined && !isString(message.killerName)) {
+      return null;
+    }
+    return { type: "dead", killerId: message.killerId, killerName: message.killerName };
   }
 
   if (data.type === "join_ack") {
@@ -72,7 +75,27 @@ export function parseServerMessage(raw: string): ServerMessage | null {
     if (!isString(message.playerId) || !isString(message.snakeId)) {
       return null;
     }
-    return { type: "join_ack", playerId: message.playerId, snakeId: message.snakeId };
+    let eliminations = 0;
+    if (message.eliminations !== undefined) {
+      if (!isNumber(message.eliminations)) {
+        return null;
+      }
+      eliminations = message.eliminations;
+    }
+    return {
+      type: "join_ack",
+      playerId: message.playerId,
+      snakeId: message.snakeId,
+      eliminations,
+    };
+  }
+
+  if (data.type === "stats") {
+    const message = data as { eliminations?: unknown };
+    if (!isNumber(message.eliminations)) {
+      return null;
+    }
+    return { type: "stats", eliminations: message.eliminations };
   }
 
   return null;

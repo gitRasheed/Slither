@@ -38,6 +38,7 @@ export type Player = {
   id: string;
   socket: WebSocket;
   snake: Snake;
+  eliminations: number;
   connectedAt: number;
 };
 

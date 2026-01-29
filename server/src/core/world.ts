@@ -41,6 +41,7 @@ export function respawnPlayer(world: World, player: Player, name?: string): void
   world.snakes.delete(player.snake.id);
   const snake = createSnake({ ownerId: player.id, name: name ?? player.snake.name });
   player.snake = snake;
+  player.eliminations = 0;
   world.snakes.set(snake.id, snake);
 }
 

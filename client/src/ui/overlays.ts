@@ -99,15 +99,20 @@ export function setDeathVisible(visible: boolean): void {
   setVisible(deathScreen, visible);
 }
 
-export function setDeathStats(stats: { score: number; killerId?: string }): void {
+export function setDeathStats(stats: {
+  score: number;
+  killerId?: string;
+  killerName?: string;
+}): void {
   if (deathScore) {
     deathScore.textContent = String(stats.score);
   }
 
   if (deathKiller) {
-    if (stats.killerId) {
+    const killerLabel = stats.killerName?.trim() || stats.killerId;
+    if (killerLabel) {
       deathKiller.style.display = "block";
-      deathKiller.textContent = `Killed by ${stats.killerId}`;
+      deathKiller.textContent = `Killed by ${killerLabel}`;
     } else {
       deathKiller.style.display = "none";
       deathKiller.textContent = "";

@@ -11,6 +11,7 @@ import {
   getSnakeId,
   pushState,
   resetStateBuffer,
+  setEliminations,
   setPlayerId,
   setSnakeId,
 } from "./game/state";
@@ -113,6 +114,7 @@ handlers.onJoinAckMessage = (message) => {
   resetStateBuffer();
   setPlayerId(message.playerId);
   setSnakeId(message.snakeId);
+  setEliminations(message.eliminations);
   joinInFlight = false;
   startPlaying();
 };
@@ -123,9 +125,17 @@ handlers.onDeathMessage = (message) => {
   }
   stopPlaying();
   setPhase("dead");
-  setDeathStats({ score: getScoreFromLatestState(), killerId: message.killerId });
+  setDeathStats({
+    score: getScoreFromLatestState(),
+    killerId: message.killerId,
+    killerName: message.killerName,
+  });
   setDeathVisible(true);
   setRespawnEnabled(true);
+};
+
+handlers.onStatsMessage = (message) => {
+  setEliminations(message.eliminations);
 };
 
 const requestJoin = async (name: string): Promise<void> => {

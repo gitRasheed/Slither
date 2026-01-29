@@ -14,6 +14,7 @@ const MAX_HISTORY_MS = 1000;
 const stateBuffer: BufferedState[] = [];
 let localPlayerId: string | undefined;
 let localSnakeId: string | undefined;
+let localEliminations = 0;
 let timeOffsetMs: number | null = null;
 
 export function pushState(newState: BufferedState, receivedAt = performance.now()): void {
@@ -111,6 +112,14 @@ export function setSnakeId(id: string): void {
 
 export function getSnakeId(): string | undefined {
   return localSnakeId;
+}
+
+export function setEliminations(count: number): void {
+  localEliminations = Math.max(0, Math.floor(count));
+}
+
+export function getEliminations(): number {
+  return localEliminations;
 }
 
 function interpolateFoods(a: Food[], b: Food[], alpha: number): Food[] {

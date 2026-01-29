@@ -1,4 +1,4 @@
-import { createWorld } from "./core/world.js";
+import { createWorld, findPlayerBySnakeId } from "./core/world.js";
 import { startGameLoop } from "./core/gameLoop.js";
 import { spawnInitialFood } from "./core/food.js";
 import { TICK_RATE } from "./constants/game.js";
@@ -40,6 +40,27 @@ startGameLoop(world, {
     if (!player) {
       return;
     }
-    sendToClient(player, { type: "dead", killerId: event.killerId });
+
+    let killerName: string | undefined;
+    if (event.killerId) {
+      const killerPlayer = findPlayerBySnakeId(world, event.killerId);
+      if (killerPlayer) {
+        killerPlayer.eliminations += 1;
+        sendToClient(killerPlayer, {
+          type: "stats",
+          eliminations: killerPlayer.eliminations,
+        });
+        const name = killerPlayer.snake.name.trim();
+        if (name) {
+          killerName = name;
+        }
+      }
+    }
+
+    sendToClient(player, {
+      type: "dead",
+      killerId: event.killerId,
+      killerName,
+    });
   },
 });

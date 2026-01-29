@@ -1,5 +1,5 @@
 import type { BufferedState } from "../game/state";
-import { getSnakeId } from "../game/state";
+import { getEliminations, getSnakeId } from "../game/state";
 import type { SnakeView } from "../types/messages";
 import { ARENA_RADIUS, HEAD_RADIUS, ZOOM } from "./constants";
 
@@ -205,6 +205,7 @@ function drawHud(
     if (localSnake) {
       ctx.fillStyle = colors.hud;
       ctx.fillText(`your length: ${localSnake.segments.length}`, baseX, baseY + lineHeight * 2);
+      ctx.fillText(`elims: ${getEliminations()}`, baseX, baseY + lineHeight * 3);
     }
   }
 }

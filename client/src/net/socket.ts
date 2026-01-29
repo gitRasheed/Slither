@@ -2,6 +2,7 @@ import type {
   ClientMessage,
   DeathMessage,
   JoinAckMessage,
+  StatsMessage,
   StateMessage,
 } from "../types/messages";
 import { parseServerMessage } from "./messageBuffer";
@@ -10,6 +11,7 @@ export const handlers = {
   onStateMessage: (_msg: StateMessage) => {},
   onDeathMessage: (_msg: DeathMessage) => {},
   onJoinAckMessage: (_msg: JoinAckMessage) => {},
+  onStatsMessage: (_msg: StatsMessage) => {},
 };
 
 let socket: WebSocket | null = null;
@@ -74,6 +76,11 @@ export function connect(url: string): Promise<void> {
 
     if (message.type === "join_ack") {
       handlers.onJoinAckMessage(message);
+      return;
+    }
+
+    if (message.type === "stats") {
+      handlers.onStatsMessage(message);
     }
   });
 
