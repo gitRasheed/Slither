@@ -44,8 +44,7 @@ export type Player = {
 };
 
 export type World = {
-  width: number;
-  height: number;
+  arenaRadius: number;
   tick: number;
   snakes: Map<string, Snake>;
   foods: Map<string, Food>;

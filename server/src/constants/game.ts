@@ -1,14 +1,12 @@
 export const TICK_RATE = 30;
 export const TICK_INTERVAL_MS = 1000 / TICK_RATE;
 
-export const MAP_WIDTH = 4000;
-export const MAP_HEIGHT = 4000;
-export const ARENA_RADIUS = Math.min(MAP_WIDTH, MAP_HEIGHT) / 2;
+export const ARENA_RADIUS = 2000;
 
 export const SNAKE_SPEED = 220;
 export const BOOST_SPEED = 360;
 export const TURN_RATE = Math.PI * 3;
-export const SNAKE_RADIUS = 2;
+export const SNAKE_RADIUS = 8;
 
 export const FOOD_RADIUS = 6;
 export const FOOD_VALUE = 12;

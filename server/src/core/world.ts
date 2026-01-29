@@ -1,14 +1,13 @@
 import { randomUUID } from "node:crypto";
 import type { WebSocket } from "ws";
-import { MAP_HEIGHT, MAP_WIDTH } from "../constants/game.js";
+import { ARENA_RADIUS } from "../constants/game.js";
 import { createPlayer } from "../entities/Player.js";
 import { createSnake } from "../entities/Snake.js";
 import type { Player, World } from "../types/game.js";
 
 export function createWorld(): World {
   return {
-    width: MAP_WIDTH,
-    height: MAP_HEIGHT,
+    arenaRadius: ARENA_RADIUS,
     tick: 0,
     snakes: new Map(),
     foods: new Map(),
