@@ -165,6 +165,8 @@ function drawSnakes(
     ctx.arc(head.x, head.y, HEAD_RADIUS, 0, Math.PI * 2);
     ctx.fill();
 
+    drawGooglyEyes(ctx, head, snake.segments[1]);
+
     if (snake.isBoosting) {
       ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
       ctx.lineWidth = 3;
@@ -208,6 +210,52 @@ function drawHud(
       ctx.fillText(`elims: ${getEliminations()}`, baseX, baseY + lineHeight * 3);
     }
   }
+}
+
+function drawGooglyEyes(
+  ctx: CanvasRenderingContext2D,
+  head: { x: number; y: number },
+  neck?: { x: number; y: number }
+): void {
+  let forwardX = 1;
+  let forwardY = 0;
+  if (neck) {
+    const dx = head.x - neck.x;
+    const dy = head.y - neck.y;
+    const length = Math.hypot(dx, dy);
+    if (length > 0.0001) {
+      forwardX = dx / length;
+      forwardY = dy / length;
+    }
+  }
+
+  const perpX = -forwardY;
+  const perpY = forwardX;
+  const eyeRadius = Math.max(1, HEAD_RADIUS * 0.46);
+  const pupilRadius = Math.max(1, HEAD_RADIUS * 0.26);
+  const eyeOffsetForward = HEAD_RADIUS * 0.35;
+  const eyeSeparation = HEAD_RADIUS * 0.45;
+  const pupilOffset = eyeRadius * 0.45;
+
+  const leftEyeX = head.x + forwardX * eyeOffsetForward + perpX * eyeSeparation;
+  const leftEyeY = head.y + forwardY * eyeOffsetForward + perpY * eyeSeparation;
+  const rightEyeX = head.x + forwardX * eyeOffsetForward - perpX * eyeSeparation;
+  const rightEyeY = head.y + forwardY * eyeOffsetForward - perpY * eyeSeparation;
+
+  ctx.fillStyle = "#f8fafc";
+  ctx.beginPath();
+  ctx.arc(leftEyeX, leftEyeY, eyeRadius, 0, Math.PI * 2);
+  ctx.arc(rightEyeX, rightEyeY, eyeRadius, 0, Math.PI * 2);
+  ctx.fill();
+
+  const pupilDx = forwardX * pupilOffset;
+  const pupilDy = forwardY * pupilOffset;
+
+  ctx.fillStyle = "#0f172a";
+  ctx.beginPath();
+  ctx.arc(leftEyeX + pupilDx, leftEyeY + pupilDy, pupilRadius, 0, Math.PI * 2);
+  ctx.arc(rightEyeX + pupilDx, rightEyeY + pupilDy, pupilRadius, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawLabels(
