@@ -9,8 +9,8 @@ export type Viewport = {
   dpr: number;
 };
 
-const FOOD_RADIUS = 4;
-const SNAKE_WIDTH = 18;
+const FOOD_RADIUS = 6;
+const SNAKE_WIDTH = 8;
 const WALL_WIDTH = 3;
 const LABEL_FONT_LOCAL = 14;
 const LABEL_FONT_OTHER = 12;
