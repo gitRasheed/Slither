@@ -82,6 +82,21 @@ const waitForClose = (socket: WebSocket, timeoutMs = 2000): Promise<void> =>
     socket.on("error", onError);
   });
 
+const waitForCondition = async (
+  condition: () => boolean,
+  timeoutMs = 1000,
+  intervalMs = 25
+): Promise<void> => {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    if (condition()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  throw new Error("Timed out waiting for condition.");
+};
+
 const resolveServerUrl = async (
   server: ReturnType<typeof startWebSocketServer>
 ): Promise<string> => {
@@ -220,6 +235,115 @@ const createMessageBuffer = (socket: WebSocket) => {
     stop,
   };
 };
+
+describe("Message validation", () => {
+  it(
+    "ignores malformed client messages",
+    async () => {
+      const world = createWorld();
+      const server = startWebSocketServer(world, { port: 0 });
+
+      let client: WebSocket | null = null;
+      let buffer: ReturnType<typeof createMessageBuffer> | null = null;
+
+      try {
+        const url = await resolveServerUrl(server);
+        client = new WebSocket(url);
+        buffer = createMessageBuffer(client);
+        await waitForOpen(client);
+
+        const sentAt = Date.now();
+        client.send("{bad json");
+        client.send(JSON.stringify({ type: "oops" }));
+        client.send(JSON.stringify({ type: "move" }));
+        client.send('{"type":"move","angle":1e309}');
+        client.send(JSON.stringify({ type: "boost", active: "nope" }));
+        client.send(JSON.stringify({ type: "join", name: 123 }));
+
+        await buffer.expectNoMessage("join_ack", { since: sentAt, timeoutMs: 300 });
+        expect(world.players.size).toBe(0);
+        expect(world.snakes.size).toBe(0);
+      } finally {
+        buffer?.stop();
+        await closeSocket(client);
+        await closeServer(server);
+      }
+    },
+    testTimeoutMs
+  );
+
+  it(
+    "rejects invalid join names",
+    async () => {
+      const world = createWorld();
+      const server = startWebSocketServer(world, { port: 0 });
+
+      let client: WebSocket | null = null;
+      let buffer: ReturnType<typeof createMessageBuffer> | null = null;
+
+      try {
+        const url = await resolveServerUrl(server);
+        client = new WebSocket(url);
+        buffer = createMessageBuffer(client);
+        await waitForOpen(client);
+
+        const sentAt = Date.now();
+        client.send(JSON.stringify({ type: "join", name: "   " }));
+        client.send(JSON.stringify({ type: "join", name: "a".repeat(17) }));
+
+        await buffer.expectNoMessage("join_ack", { since: sentAt, timeoutMs: 300 });
+        expect(world.players.size).toBe(0);
+        expect(world.snakes.size).toBe(0);
+      } finally {
+        buffer?.stop();
+        await closeSocket(client);
+        await closeServer(server);
+      }
+    },
+    testTimeoutMs
+  );
+});
+
+describe("Disconnect cleanup", () => {
+  it(
+    "removes player state after socket close",
+    async () => {
+      const world = createWorld();
+      const server = startWebSocketServer(world, { port: 0 });
+
+      let client: WebSocket | null = null;
+      let buffer: ReturnType<typeof createMessageBuffer> | null = null;
+
+      try {
+        const url = await resolveServerUrl(server);
+        client = new WebSocket(url);
+        buffer = createMessageBuffer(client);
+        await waitForOpen(client);
+
+        const joinSentAt = Date.now();
+        client.send(JSON.stringify({ type: "join", name: "alpha" }));
+        await buffer.waitFor("join_ack", { since: joinSentAt });
+
+        expect(world.players.size).toBe(1);
+        expect(world.snakes.size).toBe(1);
+
+        await closeSocket(client);
+        client = null;
+
+        await waitForCondition(
+          () => world.players.size === 0 && world.snakes.size === 0,
+          1000,
+          25
+        );
+      } finally {
+        buffer?.stop();
+        await closeSocket(client);
+        await closeServer(server);
+      }
+    },
+    testTimeoutMs
+  );
+});
 
 describe("Join flow", () => {
   it(
