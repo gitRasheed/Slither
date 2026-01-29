@@ -51,7 +51,7 @@ export function updateLeaderboard(snakes: SnakeView[], localId?: string): void {
   }
 
   const sorted = [...snakes].sort((a, b) => {
-    const delta = b.segments.length - a.segments.length;
+    const delta = b.length - a.length;
     if (delta !== 0) {
       return delta;
     }
@@ -80,7 +80,7 @@ export function updateLeaderboard(snakes: SnakeView[], localId?: string): void {
     const displayName = snake.name.trim() || "anon";
     row.rank.textContent = `${i + 1}.`;
     row.name.textContent = displayName;
-    row.length.textContent = scoreFormatter.format(snake.segments.length);
+    row.length.textContent = scoreFormatter.format(Math.floor(snake.length));
     row.row.style.display = "table-row";
 
     if (localId && snake.id === localId) {

@@ -22,4 +22,3 @@ export const MIN_LENGTH = 40;
 export const MAX_LENGTH = 2200;
 
 export const BOOST_LENGTH_DRAIN_PER_SECOND = 20;
-export const FOOD_PER_DEATH = 30;

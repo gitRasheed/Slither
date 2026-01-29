@@ -22,6 +22,7 @@ const isSnakeView = (value: unknown): value is StateMessage["snakes"][number] =>
   isString(value.name) &&
   Array.isArray(value.segments) &&
   value.segments.every(isPoint) &&
+  isNumber(value.length) &&
   typeof value.isBoosting === "boolean" &&
   isString(value.color);
 

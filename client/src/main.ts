@@ -99,7 +99,7 @@ const getScoreFromLatestState = (): number => {
     return 0;
   }
   const snake = latest.snakes.find((entry) => entry.id === localId);
-  return snake ? snake.segments.length : 0;
+  return snake ? Math.floor(snake.length) : 0;
 };
 
 handlers.onStateMessage = (message) => {

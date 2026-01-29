@@ -37,6 +37,7 @@ export function interpolateSnakes(
       id: snakeB.id,
       name: snakeB.name,
       segments,
+      length: snakeA.length + (snakeB.length - snakeA.length) * alpha,
       isBoosting: snakeB.isBoosting,
       color: snakeB.color,
     });

@@ -1,6 +1,5 @@
 import {
   ARENA_RADIUS,
-  FOOD_PER_DEATH,
   FOOD_RADIUS,
   FOOD_VALUE,
   MAX_LENGTH,
@@ -130,12 +129,7 @@ export function killSnake(snake: Snake, world: World, killerId?: string): DeathE
 
 export function spawnFoodFromSnake(snake: Snake): Food[] {
   const foods: Food[] = [];
-  const maxCount = Math.max(1, Math.floor(snake.length / FOOD_VALUE));
-  const count = Math.min(FOOD_PER_DEATH, maxCount);
-
-  if (count <= 0) {
-    return foods;
-  }
+  const count = Math.max(1, Math.floor(snake.length / FOOD_VALUE));
 
   const spacing = snake.length / (count + 1);
   for (let i = 1; i <= count; i += 1) {

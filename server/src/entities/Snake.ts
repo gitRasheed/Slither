@@ -66,6 +66,7 @@ export function toSnakeView(snake: Snake): SnakeView {
       x: segment.x,
       y: segment.y,
     })),
+    length: snake.length,
     isBoosting: snake.isBoosting,
     color: snake.color,
   };

@@ -206,7 +206,11 @@ function drawHud(
     const localSnake = state.snakes.find((snake) => snake.id === localId);
     if (localSnake) {
       ctx.fillStyle = colors.hud;
-      ctx.fillText(`your length: ${localSnake.segments.length}`, baseX, baseY + lineHeight * 2);
+      ctx.fillText(
+        `your length: ${Math.floor(localSnake.length)}`,
+        baseX,
+        baseY + lineHeight * 2
+      );
       ctx.fillText(`elims: ${getEliminations()}`, baseX, baseY + lineHeight * 3);
     }
   }
