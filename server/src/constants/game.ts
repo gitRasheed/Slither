@@ -7,7 +7,7 @@ export const ARENA_RADIUS = 2000;
 export const SNAKE_SPEED = 220;
 export const BOOST_SPEED = 360;
 export const TURN_RATE = Math.PI * 3;
-export const SNAKE_RADIUS = 8;
+export const SNAKE_RADIUS = 16;
 
 export const FOOD_RADIUS = 6;
 export const FOOD_VALUE = 12;

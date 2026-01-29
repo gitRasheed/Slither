@@ -10,7 +10,7 @@ export type Viewport = {
 };
 
 const FOOD_RADIUS = 6;
-const SNAKE_WIDTH = 8;
+const SNAKE_WIDTH = 16;
 const WALL_WIDTH = 3;
 const LABEL_FONT_LOCAL = 14;
 const LABEL_FONT_OTHER = 12;
