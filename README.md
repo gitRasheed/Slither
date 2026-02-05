@@ -1,34 +1,37 @@
 # Slither Multiplayer
 
-A server-authoritative, real-time multiplayer snake game built with TypeScript and WebSockets. Features include:
+A server-authoritative, real-time multiplayer snake game built with TypeScript and WebSockets.
 
-* Canvas-based interpolated rendering
-* Name tags above snakes
-* Join/death/respawn lifecycle
-* Leaderboard sorted by length
-* Radar minimap showing real-time positions
-* Signup and death screen overlays
-* Clean client/server message protocol with full TypeScript typing
+## Live demo
 
-**Architecture**
+- https://slither-1.onrender.com/ (Render cold start: wait ~30 seconds for the backend to boot on first load)
 
-* Node.js WebSocket server (30 ticks/sec)
-* Vite + Canvas frontend
-* Message-driven architecture (`join`, `move`, `boost` → `state`, `dead`, `join_ack`)
-* Fully client-interpolated view for smooth rendering
-* Stateless WebSocket connections (no cookies or sessions)
+## Highlights
 
-**Tech Stack**
+- Server-authoritative simulation at 30 ticks/sec
+- Client-side interpolation for smooth rendering
+- Typed message protocol (`join`, `move`, `boost` -> `state`, `dead`, `join_ack`)
+- Canvas rendering with name tags, radar minimap, and leaderboard
+- Join/death/respawn lifecycle with overlay screens
 
-* Node.js v20
-* TypeScript 5
-* Vite 5
-* HTML Canvas (no WebGL)
-* Pure WebSocket (no Socket.IO or polling)
+## How it works
 
-## Local Development
+- WebSocket server simulates game state and broadcasts snapshots.
+- Clients send input events only; rendering uses interpolated snapshots.
+- Stateless connections (no cookies or sessions).
 
-**Terminal 1 – Server**
+## Tech stack
+
+- Node.js 20, TypeScript 5, Vite 7, HTML Canvas, WebSocket (ws), msgpackr
+
+## Project structure
+
+- `server/` WebSocket game server
+- `client/` Vite + Canvas client
+
+## Quick start
+
+### Server
 
 ```bash
 cd server
@@ -36,7 +39,7 @@ npm install
 npm run dev
 ```
 
-**Terminal 2 – Client**
+### Client
 
 ```bash
 cd client
@@ -44,48 +47,20 @@ npm install
 VITE_WS_URL=ws://localhost:8080 npm run dev
 ```
 
-Visit: [http://localhost:5173](http://localhost:5173)
+Open http://localhost:5173
 
-## Remote Testing (ngrok – recommended)
+## Scripts
 
-1. Authenticate ngrok (install or use npx):
+### Server
 
-```bash
-npx ngrok@latest config add-authtoken <YOUR_TOKEN>
-```
+- `npm run dev` - run server with tsx
+- `npm run build` - compile TypeScript
+- `npm run start` - run compiled server
+- `npm run test` - run tests
+- `npm run bench` - run benchmark
 
-2. In two terminals, tunnel both ports:
+### Client
 
-```bash
-npx ngrok http 8080     # WebSocket server
-npx ngrok http 5173     # Client
-```
-
-3. Start the client with the WebSocket tunnel URL:
-
-```bash
-VITE_WS_URL=wss://<ws-tunnel-id>.ngrok.io npm run dev
-```
-
-4. Share the frontend tunnel:
-
-```
-https://<frontend-tunnel-id>.ngrok.io
-```
-
-If ngrok restarts, you’ll need to update the `VITE_WS_URL` and restart the client.
-
-## Remote Testing (manual port forwarding)
-
-1. Forward ports `8080` (server) and `5173` (client) from your router to your machine.
-2. Start the client:
-
-```bash
-VITE_WS_URL=ws://<your-public-ip>:8080 npm run dev
-```
-
-3. Share the client:
-
-```
-http://<your-public-ip>:5173
-```
+- `npm run dev` - start Vite dev server
+- `npm run build` - production build
+- `npm run preview` - preview build
